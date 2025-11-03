@@ -15,11 +15,16 @@ namespace woop {
  */
 template <typename... Args>
 inline constexpr void log(Args&&... args) {
-// TODO: Colored log messages
 #ifdef WOOP_ENABLE_LOGGING
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[2m";  // Faint text
+#endif
   std::cout << "[woop] ";
   ((std::cout << std::forward<Args>(args)), ...);
   std::cout << std::endl;
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[0m";
+#endif
 #else
   (UNUSED_PARAMETER(args), ...);
 #endif
@@ -44,11 +49,16 @@ inline constexpr void log_standard(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_warning(Args&&... args) {
-// TODO: Colored log messages
 #ifdef WOOP_ENABLE_LOGGING
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[33m";  // Yellow text
+#endif
   std::cerr << "[woop:warn] ";
   ((std::cerr << std::forward<Args>(args)), ...);
   std::cerr << std::endl;
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[0m";
+#endif
 #else
   (UNUSED_PARAMETER(args), ...);
 #endif
@@ -59,11 +69,16 @@ inline constexpr void log_warning(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_error(Args&&... args) {
-// TODO: Colored log messages
 #ifdef WOOP_ENABLE_LOGGING
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[31;1m";  // Bold red text
+#endif
   std::cerr << "[woop:error] ";
   ((std::cerr << std::forward<Args>(args)), ...);
   std::cerr << std::endl;
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[0m";
+#endif
 #else
   (UNUSED_PARAMETER(args), ...);
 #endif
@@ -74,11 +89,16 @@ inline constexpr void log_error(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_fatal(Args&&... args) {
-// TODO: Colored log messages
 #ifdef WOOP_ENABLE_LOGGING
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[41;1;30m";  // Bold black text on red background
+#endif
   std::cerr << "[woop:fatal] ";
   ((std::cerr << std::forward<Args>(args)), ...);
   std::cerr << std::endl;
+#ifdef WOOP_COLOR_LOGGING
+  std::cout << "\x1b[0m";
+#endif
 #else
   (UNUSED_PARAMETER(args), ...);
 #endif
