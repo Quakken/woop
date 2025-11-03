@@ -1,9 +1,8 @@
-#include "log.hpp"
+/**
+ * @file main.cpp
+ * @authors quak
+ * @brief Defines the engine's entry point, initializing the engine, reading
+ * config data, and starting the simulation.
+ */
 
-int main() {
-  woop::log("This is a trace message!");
-  woop::log_standard("This is a standard message!");
-  woop::log_warning("This is a warning message!");
-  woop::log_error("This is an error message!");
-  woop::log_fatal("This is a fatal messgae!");
-}
+int main() {}
