@@ -1,5 +1,5 @@
 add_executable(woop
-  test.cpp
+  main.cpp
 )
 
 target_include_directories(woop PRIVATE
