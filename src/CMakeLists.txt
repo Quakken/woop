@@ -1,5 +1,5 @@
 add_executable(woop
-  test.cpp
+  main.cpp
 )
 
 target_include_directories(woop PRIVATE
@@ -18,4 +18,10 @@ target_compile_options(woop PRIVATE
     -Wall -Werror -Wextra -Wconversion -Wsign-conversion -pedantic-errors>
   $<$<CXX_COMPILER_ID:MSVC>:
     /WX /W4>
+)
+
+# Logging
+target_compile_definitions(woop PRIVATE 
+  $<$<BOOL:${WOOP_ENABLE_LOGGING}>:"WOOP_ENABLE_LOGGING">
+  $<$<BOOL:${WOOP_COLOR_LOGGING}>:"WOOP_COLOR_LOGGING">
 )
