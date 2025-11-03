@@ -19,3 +19,9 @@ target_compile_options(woop PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:
     /WX /W4>
 )
+
+# Logging
+target_compile_definitions(woop PRIVATE 
+  $<$<BOOL:${WOOP_ENABLE_LOGGING}>:"WOOP_ENABLE_LOGGING">
+  $<$<BOOL:${WOOP_COLOR_LOGGING}>:"WOOP_COLOR_LOGGING">
+)

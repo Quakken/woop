@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include "utils.hpp"
 #include <iostream>
 
 namespace woop {
@@ -14,10 +15,14 @@ namespace woop {
  */
 template <typename... Args>
 inline constexpr void log(Args&&... args) {
-  // TODO: Colored log messages
+// TODO: Colored log messages
+#ifdef WOOP_ENABLE_LOGGING
   std::cout << "[woop] ";
   ((std::cout << std::forward<Args>(args)), ...);
   std::cout << std::endl;
+#else
+  (UNUSED_PARAMETER(args), ...);
+#endif
 }
 
 /**
@@ -25,9 +30,13 @@ inline constexpr void log(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_standard(Args&&... args) {
+#ifdef WOOP_ENABLE_LOGGING
   std::cout << "[woop] ";
   ((std::cout << std::forward<Args>(args)), ...);
   std::cout << std::endl;
+#else
+  (UNUSED_PARAMETER(args), ...);
+#endif
 }
 
 /**
@@ -35,10 +44,14 @@ inline constexpr void log_standard(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_warning(Args&&... args) {
-  // TODO: Colored log messages
+// TODO: Colored log messages
+#ifdef WOOP_ENABLE_LOGGING
   std::cerr << "[woop:warn] ";
   ((std::cerr << std::forward<Args>(args)), ...);
   std::cerr << std::endl;
+#else
+  (UNUSED_PARAMETER(args), ...);
+#endif
 }
 
 /**
@@ -46,10 +59,14 @@ inline constexpr void log_warning(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_error(Args&&... args) {
-  // TODO: Colored log messages
+// TODO: Colored log messages
+#ifdef WOOP_ENABLE_LOGGING
   std::cerr << "[woop:error] ";
   ((std::cerr << std::forward<Args>(args)), ...);
   std::cerr << std::endl;
+#else
+  (UNUSED_PARAMETER(args), ...);
+#endif
 }
 
 /**
@@ -57,9 +74,13 @@ inline constexpr void log_error(Args&&... args) {
  */
 template <typename... Args>
 inline constexpr void log_fatal(Args&&... args) {
-  // TODO: Colored log messages
+// TODO: Colored log messages
+#ifdef WOOP_ENABLE_LOGGING
   std::cerr << "[woop:fatal] ";
   ((std::cerr << std::forward<Args>(args)), ...);
   std::cerr << std::endl;
+#else
+  (UNUSED_PARAMETER(args), ...);
+#endif
 }
 }  // namespace woop
