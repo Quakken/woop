@@ -1,0 +1,24 @@
+name: "Feature"
+description: "Track work for a planned feature"
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the feature being implemented.
+      placeholder: Explain what this feature will do.
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Break down implementation steps or subtasks.
+      placeholder: "- [ ] Subtask A\n- [ ] Subtask B"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Extra details, dependencies, or references.

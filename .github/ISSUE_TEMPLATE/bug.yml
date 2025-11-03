@@ -1,0 +1,36 @@
+name: "Bug Report"
+description: "Report a problem"
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong?
+      placeholder: Describe the issue clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Include steps or code to trigger the bug.
+      placeholder: "1. Step one\n2. Step two\n3. Observe issue"
+      render: shell
+  - type: input
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+  - type: input
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, version, commit hash, etc.
+      placeholder: "OS: Windows 10\nVersion: v0.2.1\nCommit: abc1234"
