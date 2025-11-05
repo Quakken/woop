@@ -2,7 +2,7 @@ include(FetchGTest.cmake)
 enable_testing()
 
 add_executable(woop_tests
-  placeholder.cpp
+  wad.cpp
 )
 
 target_link_libraries(woop_tests PRIVATE 
