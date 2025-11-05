@@ -1,5 +1,6 @@
 add_executable(woop
   main.cpp
+  wad.cpp
 )
 
 target_include_directories(woop PRIVATE
