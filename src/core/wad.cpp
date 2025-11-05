@@ -8,6 +8,7 @@
 #include <fstream> /* std::ifstream */
 
 namespace woop {
+Wad::Wad() {}
 Wad::Wad(const std::filesystem::path& path) {
   open(path);
 }
