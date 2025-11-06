@@ -6,6 +6,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "log.hpp"
 #include "wad.hpp"
 
 // Path to the wad that will be used for testing.
@@ -82,4 +83,19 @@ TEST(Wads, GetLump) {
   }
   // Retrieving a lump that doesn't exist
   EXPECT_THROW(wad.get_lump("INVALIDLUMP"), woop::WadException);
+}
+
+TEST(Wads, Iterator) {
+  woop::Wad wad(wad_path);
+  // Search for the start and end of the sprites block (very inefficient)
+  bool start_found, end_found;
+  for (const auto& it : wad) {
+    if (it.name == "S_START")
+      start_found = true;
+    if (it.name == "S_END")
+      end_found = true;
+    if (start_found && end_found)
+      break;
+  }
+  EXPECT_TRUE(start_found && end_found);
 }

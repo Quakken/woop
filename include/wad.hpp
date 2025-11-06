@@ -105,6 +105,12 @@ class Wad {
   void close() noexcept;
 
   /**
+   * Iterator protocol
+   */
+  std::vector<Lump>::iterator begin() noexcept { return lumps.begin(); }
+  std::vector<Lump>::iterator end() noexcept { return lumps.end(); }
+
+  /**
    * @brief Returns true if the Wad has been read from a file.
    */
   bool is_open() const noexcept { return file_loaded; }
