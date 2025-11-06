@@ -1,5 +1,5 @@
 add_library(woop_core STATIC 
-  "placeholder.cpp"
+  wad.cpp
 )
 
 target_include_directories(woop_core PUBLIC
