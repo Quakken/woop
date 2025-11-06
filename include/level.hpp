@@ -93,8 +93,8 @@ struct Sidedef {
 struct Linedef {
   glm::vec2& start;
   glm::vec2& end;
-  Sidedef& front;
-  Sidedef& back;
+  Sidedef* front;
+  Sidedef* back;
   /* TODO: Flags and specials */
 };
 
@@ -148,6 +148,8 @@ class Level {
    * @brief Closes the level, releasing all data.
    */
   void close();
+
+  bool is_open() const noexcept { return loaded; }
 
  private:
   /**
@@ -226,19 +228,33 @@ class Level {
   struct RawSector {
     int16_t floor_height;
     int16_t ceiling_height;
-    char floor_name[8];
-    char ceiling_name[8];
+    char floor_texture[8];
+    char ceiling_texture[8];
     int16_t light_level;
     int16_t special;
     int16_t tag;
   };
 
  private:
+  void populate_level_data(const Wad& wad, const std::string& level_name);
+  void populate_sectors(const Wad& wad, const std::string& level_name);
+  void populate_subsectors(const Wad& wad, const std::string& level_name);
+  void populate_segs(const Wad& wad, const std::string& level_name);
+  void populate_linedefs(const Wad& wad, const std::string& level_name);
+  void populate_sidedefs(const Wad& wad, const std::string& level_name);
+  void populate_vertices(const Wad& wad, const std::string& level_name);
+  /**
+   * @brief Fills all data that could not be assigned during population (due to
+   * dependency circles)
+   */
+  void finish_connections();
+
   std::vector<Sector> sectors;
   std::vector<Subsector> subsectors;
   std::vector<Seg> segs;
   std::vector<Linedef> linedefs;
   std::vector<Sidedef> sidedefs;
+  std::vector<glm::vec2> vertices;
   /* TODO: Binary trees with nodes */
   /* TODO: Reject and blockmap */
   bool loaded;

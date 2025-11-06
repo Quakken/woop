@@ -31,6 +31,7 @@ class WadException : public Exception {
     LumpNotFound,
     InvalidHeader,
     InvalidDirectory,
+    BadLumpInterpret,
   };
 
   WadException(Type type, const std::string_view& what = "WadException")
@@ -85,6 +86,24 @@ struct WadEntry {
 struct Lump {
   std::string name;
   std::vector<std::byte> data;
+
+  /**
+   * @brief Reads the lump's data as though it were a vector of the given type.
+   * @note This clones the data into a new array and returns the result.
+   */
+  template <typename T>
+  std::vector<T> get_data_as() const {
+    // Make sure sectors can be read safely
+    if (data.size() % sizeof(T) != 0)
+      throw WadException(WadException::Type::BadLumpInterpret,
+                         "Lump could not be interpreted as the given type");
+
+    // Reinterpret lump data as the desired type.
+    std::size_t count = data.size() / sizeof(T);
+    std::vector<T> out(count);
+    std::memcpy(out.data(), data.data(), count * sizeof(T));
+    return out;
+  }
 };
 
 /**
