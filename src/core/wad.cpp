@@ -8,7 +8,7 @@
 #include <fstream> /* std::ifstream */
 
 namespace woop {
-Wad::Wad() {}
+Wad::Wad() : type(WadType::Unloaded) {}
 Wad::Wad(const std::filesystem::path& path) {
   open(path);
 }
@@ -24,7 +24,7 @@ void Wad::open(const std::filesystem::path& path) {
   }
   // Load data
   WadHeader header = parse_header(file);
-  get_type(header);
+  get_wad_type(header);
   std::vector<WadEntry> directory = parse_directory(file, header);
   get_lumps_from_directory(file, directory);
   file_loaded = true;
@@ -32,6 +32,7 @@ void Wad::open(const std::filesystem::path& path) {
 
 void Wad::close() noexcept {
   file_loaded = false;
+  type = WadType::Unloaded;
   lumps.clear();
 }
 
@@ -46,7 +47,7 @@ WadHeader Wad::parse_header(std::ifstream& file) {
   return out;
 }
 
-void Wad::get_type(const WadHeader& header) {
+void Wad::get_wad_type(const WadHeader& header) {
   std::string type_str(header.type, sizeof(header.type));
   if (type_str == "IWAD")
     type = WadType::Internal;

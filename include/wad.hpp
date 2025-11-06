@@ -23,6 +23,9 @@ namespace woop {
  */
 class WadException : public Exception {
  public:
+  /**
+   * @brief Details the cause of the exception.
+   */
   enum class Type : uint8_t {
     FileNotFound,
     LumpNotFound,
@@ -46,6 +49,7 @@ class WadException : public Exception {
  * @brief Defines the type of a wad (internal or patch).
  */
 enum class WadType : uint8_t {
+  Unloaded,
   Internal,
   Patch,
 };
@@ -90,15 +94,14 @@ class Wad {
  public:
   Wad();
   /**
-   * @brief Creates and opens a wad at the given path.
+   * @brief Opens a wad file at the given path.
    */
   Wad(const std::filesystem::path& path);
 
   /**
-   * @brief Opens a new wad file at the given path.
+   * @brief Opens a wad file at the given path.
    */
   void open(const std::filesystem::path& path);
-
   /**
    * @brief Closes the wad, releasing all data.
    */
@@ -114,10 +117,19 @@ class Wad {
    * @brief Returns true if the Wad has been read from a file.
    */
   bool is_open() const noexcept { return file_loaded; }
+  /**
+   * @brief Returns the type of wad that is currently loaded.
+   */
+  WadType get_type() const noexcept { return type; }
+  /**
+   * @brief Returns the number of lumps that have been loaded.
+   */
+  std::size_t get_num_lumps() const noexcept { return lumps.size(); }
 
   /**
-   * @brief Returns a reference to the first lump which comes after the given
-   * names.
+   * @brief Returns a reference to the given lump, or the first lump which comes
+   * after the given names.
+   * @example `wad.get_lump("COLORMAP")` loads the COLORMAP lump
    * @example `wad.get_lump("E1M1", "THINGS")` loads the first THINGS lump that
    * comes after E1M1
    */
@@ -154,18 +166,15 @@ class Wad {
    * @brief Parses the header of a wad file.
    */
   static WadHeader parse_header(std::ifstream& file);
-
   /**
    * @brief Determines what type of wad was loaded from a header's type.
    */
-  void get_type(const WadHeader& header);
-
+  void get_wad_type(const WadHeader& header);
   /**
    * @brief Parses the contents of a wad's directory.
    */
   static std::vector<WadEntry> parse_directory(std::ifstream& file,
                                                const WadHeader& header);
-
   /**
    * @brief Runs through directory entries, copying data from the wad into lump
    * objects.
@@ -176,7 +185,6 @@ class Wad {
    * @brief Searches a file for the given lump, returning its data.
    */
   static Lump get_lump_from_entry(std::ifstream& file, const WadEntry& entry);
-
   /**
    * @brief Creates a string from a potentially non-null-terminated buffer.
    */
