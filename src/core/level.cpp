@@ -5,6 +5,7 @@
  */
 
 #include "level.hpp"
+#include "bsp.hpp"
 
 namespace woop {
 constexpr float doom_angle_to_deg(int16_t angle) {
@@ -34,6 +35,19 @@ void Level::close() {
   sidedefs.clear();
   nodes.clear();
   loaded = false;
+}
+
+const Node& Level::get_root_node() const {
+  if (!is_open())
+    throw BSPException(BSPException::Type::InvalidNodeAccess,
+                       "Attempting to access root node of unloaded level.");
+  return *bsp_root;
+}
+Node& Level::get_root_node() {
+  if (!is_open())
+    throw BSPException(BSPException::Type::InvalidNodeAccess,
+                       "Attempting to access root node of unloaded level.");
+  return *bsp_root;
 }
 
 void Level::populate_level_data(const Wad& wad) {

@@ -140,6 +140,9 @@ class Level {
 
   std::string get_name() const noexcept { return name; }
 
+  const Node& get_root_node() const;
+  Node& get_root_node();
+
  private:
   /**
    * RAW TYPES
