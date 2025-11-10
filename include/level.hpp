@@ -138,6 +138,8 @@ class Level {
 
   bool is_open() const noexcept { return loaded; }
 
+  std::string get_name() const noexcept { return name; }
+
  private:
   /**
    * RAW TYPES

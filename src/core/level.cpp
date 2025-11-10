@@ -32,6 +32,7 @@ void Level::close() {
   segs.clear();
   linedefs.clear();
   sidedefs.clear();
+  nodes.clear();
   loaded = false;
 }
 
