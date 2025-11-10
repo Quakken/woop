@@ -9,8 +9,8 @@
 
 #include "exception.hpp" /* woop::Exception */
 #include "wad.hpp"       /* woop::Wad, woop::Lump */
+#include "bsp.hpp"       /* woop::Node */
 #include "glm/vec2.hpp"  /* glm::vec2 */
-#include <variant>       /* std::variant */
 #include <vector>        /* std::vector */
 
 namespace woop {
@@ -116,17 +116,6 @@ struct Seg {
  */
 struct Subsector {
   std::vector<Seg*> segs;
-};
-
-/**
- * @brief Data for a single node of a level's BSP tree.
- */
-struct Node {
-  /* OPTIMIZATION: Bounds testing via bounds rects */
-  std::variant<Subsector*, Node*> left_child;
-  std::variant<Subsector*, Node*> right_child;
-  glm::vec2 partition_start;
-  glm::vec2 partition_end;
 };
 
 /**
@@ -236,13 +225,14 @@ class Level {
   };
 
  private:
-  void populate_level_data(const Wad& wad, const std::string& level_name);
-  void populate_sectors(const Wad& wad, const std::string& level_name);
-  void populate_subsectors(const Wad& wad, const std::string& level_name);
-  void populate_segs(const Wad& wad, const std::string& level_name);
-  void populate_linedefs(const Wad& wad, const std::string& level_name);
-  void populate_sidedefs(const Wad& wad, const std::string& level_name);
-  void populate_vertices(const Wad& wad, const std::string& level_name);
+  void populate_level_data(const Wad& wad);
+  void populate_sectors(const Wad& wad);
+  void populate_subsectors(const Wad& wad);
+  void populate_segs(const Wad& wad);
+  void populate_linedefs(const Wad& wad);
+  void populate_sidedefs(const Wad& wad);
+  void populate_vertices(const Wad& wad);
+  void populate_nodes(const Wad& wad);
   /**
    * @brief Fills all data that could not be assigned during population (due to
    * dependency circles)
@@ -255,8 +245,10 @@ class Level {
   std::vector<Linedef> linedefs;
   std::vector<Sidedef> sidedefs;
   std::vector<glm::vec2> vertices;
-  /* TODO: Binary trees with nodes */
+  std::vector<Node> nodes;
   /* TODO: Reject and blockmap */
   bool loaded;
+  std::string name;
+  Node* bsp_root;
 };
 }  // namespace woop

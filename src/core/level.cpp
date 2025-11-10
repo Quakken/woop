@@ -13,13 +13,14 @@ constexpr float doom_angle_to_deg(int16_t angle) {
 
 Level::Level() : loaded(false) {}
 
-Level::Level(const Wad& wad, const std::string& name) {
-  open(wad, name);
+Level::Level(const Wad& wad, const std::string& level_name) {
+  open(wad, level_name);
 }
 
-void Level::open(const Wad& wad, const std::string& name) {
+void Level::open(const Wad& wad, const std::string& level_name) {
   close();
-  populate_level_data(wad, name);
+  name = level_name;
+  populate_level_data(wad);
   loaded = true;
 }
 
@@ -34,17 +35,18 @@ void Level::close() {
   loaded = false;
 }
 
-void Level::populate_level_data(const Wad& wad, const std::string& name) {
-  populate_vertices(wad, name);
-  populate_sectors(wad, name);
-  populate_sidedefs(wad, name);
-  populate_linedefs(wad, name);
-  populate_segs(wad, name);
-  populate_subsectors(wad, name);
+void Level::populate_level_data(const Wad& wad) {
+  populate_vertices(wad);
+  populate_sectors(wad);
+  populate_sidedefs(wad);
+  populate_linedefs(wad);
+  populate_segs(wad);
+  populate_subsectors(wad);
+  populate_nodes(wad);
   finish_connections();
 }
-void Level::populate_sectors(const Wad& wad, const std::string& level_name) {
-  const Lump& lump = wad.get_lump(level_name, "SECTORS");
+void Level::populate_sectors(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "SECTORS");
   std::vector<RawSector> raw_data = lump.get_data_as<RawSector>();
   sectors.reserve(raw_data.size());
   for (const auto& raw_sector : raw_data) {
@@ -57,8 +59,8 @@ void Level::populate_sectors(const Wad& wad, const std::string& level_name) {
     sectors.emplace_back(sector);
   }
 }
-void Level::populate_subsectors(const Wad& wad, const std::string& level_name) {
-  const Lump& lump = wad.get_lump(level_name, "SSECTORS");
+void Level::populate_subsectors(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "SSECTORS");
   std::vector<RawSubsector> raw_data = lump.get_data_as<RawSubsector>();
   subsectors.reserve(raw_data.size());
   for (const auto& raw_subsector : raw_data) {
@@ -73,8 +75,8 @@ void Level::populate_subsectors(const Wad& wad, const std::string& level_name) {
     subsectors.emplace_back(subsector);
   }
 }
-void Level::populate_segs(const Wad& wad, const std::string& level_name) {
-  const Lump& lump = wad.get_lump(level_name, "SEGS");
+void Level::populate_segs(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "SEGS");
   std::vector<RawSeg> raw_data = lump.get_data_as<RawSeg>();
   segs.reserve(raw_data.size());
   for (const auto& raw_seg : raw_data) {
@@ -93,8 +95,8 @@ void Level::populate_segs(const Wad& wad, const std::string& level_name) {
     segs.emplace_back(seg);
   }
 }
-void Level::populate_linedefs(const Wad& wad, const std::string& level_name) {
-  const Lump& lump = wad.get_lump(level_name, "LINEDEFS");
+void Level::populate_linedefs(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "LINEDEFS");
   std::vector<RawLinedef> raw_data = lump.get_data_as<RawLinedef>();
   linedefs.reserve(raw_data.size());
   for (const auto& raw_linedef : raw_data) {
@@ -127,8 +129,8 @@ void Level::populate_linedefs(const Wad& wad, const std::string& level_name) {
     linedefs.emplace_back(linedef);
   }
 }
-void Level::populate_sidedefs(const Wad& wad, const std::string& level_name) {
-  const Lump& lump = wad.get_lump(level_name, "SIDEDEFS");
+void Level::populate_sidedefs(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "SIDEDEFS");
   std::vector<RawSidedef> raw_data = lump.get_data_as<RawSidedef>();
   sidedefs.reserve(raw_data.size());
   for (const auto& raw_sidedef : raw_data) {
@@ -148,14 +150,55 @@ void Level::populate_sidedefs(const Wad& wad, const std::string& level_name) {
     sidedefs.emplace_back(sidedef);
   }
 }
-void Level::populate_vertices(const Wad& wad, const std::string& level_name) {
-  const Lump& lump = wad.get_lump(level_name, "VERTEXES");
+void Level::populate_vertices(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "VERTEXES");
   std::vector<RawVertex> raw_data = lump.get_data_as<RawVertex>();
   vertices.reserve(raw_data.size());
   for (const auto& raw_vertex : raw_data) {
     glm::vec2 vertex{raw_vertex.x_pos, raw_vertex.y_pos};
     vertices.emplace_back(vertex);
   }
+}
+
+void Level::populate_nodes(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "NODES");
+  std::vector<RawNode> raw_data = lump.get_data_as<RawNode>();
+  nodes.reserve(raw_data.size());
+
+  // Initialize nodes
+  for (const auto& raw_node : raw_data) {
+    glm::vec2 part_start{
+        raw_node.x_part_start,
+        raw_node.x_part_start + raw_node.x_part_delta,
+    };
+    glm::vec2 part_end{
+        raw_node.y_part_start,
+        raw_node.y_part_start + raw_node.y_part_delta,
+    };
+    Node node{part_start, part_end};
+    nodes.emplace_back(node);
+  }
+  // Link nodes
+  for (std::size_t i = 0; i < nodes.size(); ++i) {
+    const RawNode& raw_node = raw_data[i];
+    Node& node = nodes[i];
+    // Mask out sign bit of both targets
+    std::size_t left_target = raw_node.left_child & 0x7fff;
+    std::size_t right_target = raw_node.right_child & 0x7fff;
+    // If child's sign is negative, it points to a subsector
+    // Otherwise, it points to a node
+    if (raw_node.left_child < 0)
+      node.set_subsector_left(subsectors[left_target]);
+    else
+      node.set_node_left(nodes[left_target]);
+    if (raw_node.right_child < 0)
+      node.set_subsector_right(subsectors[right_target]);
+    else
+      node.set_node_right(nodes[right_target]);
+  }
+  // "The root node is the highest-numbered entry in the lump"
+  // (https://doomwiki.org/wiki/Node)
+  bsp_root = &nodes[nodes.size() - 1];
 }
 
 void Level::finish_connections() {
