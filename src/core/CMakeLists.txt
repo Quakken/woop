@@ -1,5 +1,7 @@
 add_library(woop_core STATIC 
   wad.cpp
+  level.cpp
+  bsp.cpp
 )
 
 target_include_directories(woop_core PUBLIC
