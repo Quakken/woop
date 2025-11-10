@@ -49,8 +49,6 @@ class LevelException : public Exception {
  * https://doomwiki.org/wiki/Map_format
  */
 
-/* TODO: Things */
-
 /**
  * @brief Stores data about a single map sector
  */
@@ -58,12 +56,12 @@ struct Sector {
   struct {
     int16_t height;
     std::string texture;
-    /* Texture& texture; */
+    /* TODO: Texture& texture; */
   } floor;
   struct {
     int16_t height;
     std::string texture;
-    /* Texture& texture; */
+    /* TODO: Texture& texture; */
   } ceiling;
   int16_t light_level;
   std::vector<Linedef*> lines;

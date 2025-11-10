@@ -5,8 +5,7 @@
  */
 
 #include "bsp.hpp"
-#include "level.hpp"
-#include <variant>
+#include "level.hpp" /* woop::Sector */
 
 namespace woop {
 Node::Node(const glm::vec2& part_start, const glm::vec2& part_end)
@@ -23,11 +22,7 @@ Node::Child Node::get_nearest_child(const glm::vec2& point) const noexcept {
 
   // If dot is 0, the point is on the line, so it doesn't matter which child is
   // returned.
-
-  if (dot < 0)
-    return Child::Left;
-  else
-    return Child::Right;
+  return (dot < 0) ? Child::Left : Child::Right;
 }
 
 bool Node::is_node(Child child) const noexcept {
@@ -61,7 +56,7 @@ const Node& Node::get_node(Child child) const {
     target_child = std::get<Node*>(left_child);
   if (!target_child)
     throw BSPException(BSPException::Type::InvalidNodeAccess,
-                       "Attempting to access null child");
+                       "Attempting to access uninitialized child");
 
   return *target_child;
 }
@@ -77,7 +72,7 @@ Node& Node::get_node(Child child) {
     target_child = std::get<Node*>(left_child);
   if (!target_child)
     throw BSPException(BSPException::Type::InvalidNodeAccess,
-                       "Attempting to access null child");
+                       "Attempting to access uninitialized child");
 
   return *target_child;
 }
@@ -99,10 +94,10 @@ const Subsector& Node::get_subsector(Child child) const {
     target_child = std::get<Subsector*>(right_child);
   else
     target_child = std::get<Subsector*>(left_child);
+
   if (!target_child)
     throw BSPException(BSPException::Type::InvalidNodeAccess,
-                       "Attempting to access null child");
-
+                       "Attempting to access uninitialized child");
   return *target_child;
 }
 Subsector& Node::get_subsector(Child child) {
@@ -115,10 +110,10 @@ Subsector& Node::get_subsector(Child child) {
     target_child = std::get<Subsector*>(right_child);
   else
     target_child = std::get<Subsector*>(left_child);
+
   if (!target_child)
     throw BSPException(BSPException::Type::InvalidNodeAccess,
-                       "Attempting to access null child");
-
+                       "Attempting to access uninitialized child");
   return *target_child;
 }
 }  // namespace woop
