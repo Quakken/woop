@@ -39,6 +39,10 @@ glm::ivec2 Window::get_resolution() const noexcept {
 void Window::set_resolution(const glm::ivec2& new_resolution) noexcept {
   glfwSetWindowSize(window, new_resolution.x, new_resolution.y);
 }
+float Window::get_aspect_ratio() const noexcept {
+  return static_cast<float>(get_resolution().x) /
+         static_cast<float>(get_resolution().y);
+}
 
 void Window::init_glfw() {
   log("Initializing GLFW");

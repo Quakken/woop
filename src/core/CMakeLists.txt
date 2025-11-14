@@ -3,6 +3,7 @@ add_library(woop_core STATIC
   level.cpp
   bsp.cpp
   window.cpp
+  camera.cpp
 )
 
 target_include_directories(woop_core PUBLIC

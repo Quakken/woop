@@ -70,6 +70,8 @@ class Window {
   glm::ivec2 get_resolution() const noexcept;
   void set_resolution(const glm::ivec2& new_resolution) noexcept;
 
+  float get_aspect_ratio() const noexcept;
+
   /**
    * @brief Returns a reference to the underlying GLFWwindow object.
    */
