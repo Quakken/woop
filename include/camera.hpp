@@ -1,3 +1,10 @@
+/**
+ * @file camera.hpp
+ * @authors quak
+ * @brief Declares the camera class, which is used to transform all world space
+ * coordinates to clip and screen space based on a position and rotation.
+ */
+
 #pragma once
 
 #include "window.hpp"  /* woop::Window */
@@ -25,6 +32,11 @@ class Camera {
 
   float get_rotation() const noexcept { return config.rotation; }
   void set_rotation(float new_angle) noexcept;
+
+  /**
+   * @brief Returns a reference to the camera's associated window.
+   */
+  const Window& get_window() const noexcept { return window; }
 
   /**
    * @brief Returns the camera's world->clip space transformation matrix.

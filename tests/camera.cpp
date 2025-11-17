@@ -1,3 +1,9 @@
+/**
+ * @file camera.cpp
+ * @authors quak
+ * @brief Tests for camera transformations/visibility.
+ */
+
 #include "camera.hpp"
 #include "glm/fwd.hpp"
 #include "gtest/gtest.h"

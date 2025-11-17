@@ -1,8 +1,12 @@
+/**
+ * @file camera.cpp
+ * @authors quak
+ * @brief Defines members of the camera class.
+ */
+
 #include "camera.hpp"
-#include <optional>
-#include "utils.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/trigonometric.hpp"
+#include "utils.hpp"                    /* is_between_inclusive */
+#include "glm/gtc/matrix_transform.hpp" /* glm::lookAt, glm::perspective */
 
 namespace woop {
 Camera::Camera(const Window& wdw, const CameraConfig& cfg)

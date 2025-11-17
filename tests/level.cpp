@@ -1,3 +1,10 @@
+/**
+ * @file level.cpp
+ * @authors quak
+ * @brief Tests level loading and basic BSP navigation.
+ * @note These tests require an official DOOM wad to run.
+ */
+
 #include "level.hpp"
 #include "glm/fwd.hpp"
 #include "gtest/gtest.h"
