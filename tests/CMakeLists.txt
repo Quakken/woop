@@ -4,6 +4,7 @@ enable_testing()
 add_executable(woop_tests
   wad.cpp
   level.cpp
+  camera.cpp
 )
 
 target_link_libraries(woop_tests PRIVATE 

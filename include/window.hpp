@@ -25,6 +25,7 @@ struct WindowException : public Exception {
     CreationError,
     GladInitialization,
     GLFWInitialization,
+    Other,
   };
 
   WindowException(Type type, const std::string_view& what)
@@ -69,6 +70,8 @@ class Window {
 
   glm::ivec2 get_resolution() const noexcept;
   void set_resolution(const glm::ivec2& new_resolution) noexcept;
+
+  float get_aspect_ratio() const;
 
   /**
    * @brief Returns a reference to the underlying GLFWwindow object.
