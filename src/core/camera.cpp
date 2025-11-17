@@ -28,6 +28,10 @@ glm::vec4 Camera::world_to_clip(const glm::vec3& world) noexcept {
   homogenous = get_transform() * homogenous;
   return homogenous;
 }
+glm::vec3 Camera::clip_to_ndc(const glm::vec4& clip) noexcept {
+  glm::vec3 out = clip;
+  return out / clip.w;
+}
 
 void Camera::update_transform() noexcept {
   constexpr glm::vec3 world_up{0.0f, 1.0f, 0.0f};
@@ -42,9 +46,8 @@ void Camera::update_transform() noexcept {
       sin(pitch),
       cos(pitch) * sin(yaw),
   };
-  cam_fwd = glm::normalize(cam_fwd);
 
-  glm::mat4 view = glm::lookAt(cam_pos, cam_pos + cam_fwd, world_up);
+  glm::mat4 view = glm::lookAt(cam_pos, cam_pos - cam_fwd, world_up);
   glm::mat4 projection =
       glm::perspective(glm::radians(config.fov), window.get_aspect_ratio(),
                        config.near_plane, config.far_plane);

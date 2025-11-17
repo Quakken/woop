@@ -39,9 +39,13 @@ glm::ivec2 Window::get_resolution() const noexcept {
 void Window::set_resolution(const glm::ivec2& new_resolution) noexcept {
   glfwSetWindowSize(window, new_resolution.x, new_resolution.y);
 }
-float Window::get_aspect_ratio() const noexcept {
-  return static_cast<float>(get_resolution().x) /
-         static_cast<float>(get_resolution().y);
+float Window::get_aspect_ratio() const {
+  float x = static_cast<float>(get_resolution().x);
+  float y = static_cast<float>(get_resolution().y);
+  if (y == 0)
+    throw WindowException(WindowException::Type::Other,
+                          "Window has no vertical size (is it minimized?)");
+  return x / y;
 }
 
 void Window::init_glfw() {

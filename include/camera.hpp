@@ -38,6 +38,11 @@ class Camera {
   glm::vec4 world_to_clip(const glm::vec3& world) noexcept;
 
   /**
+   * @brief Converts clip space coordinates to NDC via perspective division.
+   */
+  glm::vec3 clip_to_ndc(const glm::vec4& clip) noexcept;
+
+  /**
    * @brief Returns true if a point in clip space is visible.
    */
   bool is_visible(const glm::vec4& clip) const noexcept;
