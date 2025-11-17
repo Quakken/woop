@@ -1,7 +1,7 @@
 #pragma once
 
-#include "glm/glm.hpp" /* glm::vec3, glm::mat4 */
-#include "window.hpp"  /* glm::Window */
+#include "window.hpp"  /* woop::Window */
+#include "glm/glm.hpp" /* glm::ivec2, glm::vec3, glm::vec4, glm::mat4 */
 #include <optional>    /* std::optional */
 
 namespace woop {
@@ -39,8 +39,15 @@ class Camera {
 
   /**
    * @brief Converts clip space coordinates to NDC via perspective division.
+   * @note If nullopt is returned, the point should NOT be drawn (clip w=0).
    */
-  glm::vec3 clip_to_ndc(const glm::vec4& clip) noexcept;
+  std::optional<glm::vec3> clip_to_ndc(const glm::vec4& clip) noexcept;
+
+  /**
+   * @brief Converts normalized device coordinates to screen space for the
+   * camera's associated window.
+   */
+  glm::ivec2 ndc_to_screen(const glm::vec3& ndc) noexcept;
 
   /**
    * @brief Returns true if a point in clip space is visible.

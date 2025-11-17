@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include <optional>
 #include "utils.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/trigonometric.hpp"
@@ -28,10 +29,25 @@ glm::vec4 Camera::world_to_clip(const glm::vec3& world) noexcept {
   homogenous = get_transform() * homogenous;
   return homogenous;
 }
-glm::vec3 Camera::clip_to_ndc(const glm::vec4& clip) noexcept {
+std::optional<glm::vec3> Camera::clip_to_ndc(const glm::vec4& clip) noexcept {
   glm::vec3 out = clip;
+  if (clip.w == 0)
+    return std::nullopt;
   return out / clip.w;
 }
+glm::ivec2 Camera::ndc_to_screen(const glm::vec3& ndc) noexcept {
+  glm::vec2 normal_positive = {
+      (ndc.x + 1.0f) / 2.0f,
+      (ndc.y + 1.0f) / 2.0f,
+  };
+
+  glm::ivec2 resolution = window.get_resolution();
+  glm::ivec2 out = {
+      normal_positive.x * static_cast<float>(resolution.x),
+      normal_positive.y * static_cast<float>(resolution.y),
+  };
+  return out;
+}  // namespace woop
 
 void Camera::update_transform() noexcept {
   constexpr glm::vec3 world_up{0.0f, 1.0f, 0.0f};
