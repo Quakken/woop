@@ -9,7 +9,8 @@ target_link_libraries(woop PRIVATE
 )
 
 # Copy assets
-file(
-  COPY "${CMAKE_SOURCE_DIR}/assets" 
-  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}"
-)
+add_custom_command(
+        TARGET woop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/assets
+                ${CMAKE_CURRENT_BINARY_DIR}/assets)
