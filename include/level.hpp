@@ -103,7 +103,7 @@ struct Seg {
   glm::vec2& start;
   glm::vec2& end;
   Linedef& linedef;
-  Sidedef& sidedef;
+  Sidedef* sidedef;
   float angle;
   int16_t offset;
 };

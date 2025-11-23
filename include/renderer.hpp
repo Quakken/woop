@@ -44,14 +44,17 @@ class Frame {
 
   void map_buffer();
   void update_display_texture();
+  Pixel& get_buffer_element(int x, int y);
 
   void draw_node_child(DrawMode mode, const Node& node, Node::Child child);
-  void draw_column_solid(std::size_t column,
-                         std::size_t top,
-                         std::size_t bottom);
-  void draw_column_wireframe(std::size_t column,
-                             std::size_t top,
-                             std::size_t bottom);
+  void draw_seg_impl(DrawMode mode,
+                     const glm::ivec2& start_upper,
+                     const glm::ivec2& start_lower,
+                     const glm::ivec2& end_upper,
+                     const glm::ivec2& end_lower);
+  void draw_column(DrawMode mode, int column, int top, int bottom);
+  void draw_column_solid(int column, int top, int bottom);
+  void draw_column_wireframe(int column, int top, int bottom);
 
   Renderer& renderer;
   DisplayRect& display_rect;
@@ -78,7 +81,7 @@ struct RendererConfig {
     std::string vert_src = "";
     std::string frag_src = "";
   } shaders;
-  Pixel clear_color = Pixel{255, 255, 255, 255};
+  Pixel clear_color = Pixel{0, 0, 0, 255};
   Pixel fill_color = Pixel{255, 255, 255, 255};
   unsigned texture_unit = 0;
 };
