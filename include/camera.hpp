@@ -33,6 +33,8 @@ class Camera {
   float get_rotation() const noexcept { return config.rotation; }
   void set_rotation(float new_angle) noexcept;
 
+  float get_fov() const noexcept { return config.fov; }
+
   /**
    * @brief Returns a reference to the camera's associated window.
    */

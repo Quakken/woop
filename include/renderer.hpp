@@ -7,6 +7,8 @@
 #include "exception.hpp"    /* woop::Exception */
 #include "glad/glad.h"      /* OpenGL functions */
 
+#include "unordered_map"
+
 namespace woop {
 class Renderer;
 
@@ -44,17 +46,23 @@ class Frame {
 
   void map_buffer();
   void update_display_texture();
-  Pixel& get_buffer_element(int x, int y);
+  Pixel& get_buffer_element(unsigned x, unsigned y);
+
+  unsigned angle_to_column(int16_t angle);
+  int16_t column_to_angle(unsigned column);
+  static constexpr float percent_between(float value, float start, float end) {
+    return std::clamp((value - start) / (end - start), 0.0f, 1.0f);
+  }
+  template <typename T>
+  static constexpr T interpolate(float v, T start, T end) {
+    return +static_cast<T>(static_cast<float>(start) +
+                           v * static_cast<float>(end - start));
+  }
+
+  float get_column_scale(int16_t angle, float distance);
+  float get_point_distance(const glm::vec2& point);
 
   void draw_node_child(DrawMode mode, const Node& node, Node::Child child);
-  void draw_seg_impl(DrawMode mode,
-                     const glm::ivec2& start_upper,
-                     const glm::ivec2& start_lower,
-                     const glm::ivec2& end_upper,
-                     const glm::ivec2& end_lower);
-  void draw_column(DrawMode mode, int column, int top, int bottom);
-  void draw_column_solid(int column, int top, int bottom);
-  void draw_column_wireframe(int column, int top, int bottom);
 
   Renderer& renderer;
   DisplayRect& display_rect;
@@ -106,10 +114,13 @@ class Renderer {
   friend Frame;
 
   void gen_pbos();
+  void gen_lookup_tables();
   void bind_pbo_back() const noexcept;
   void bind_pbo_front() const noexcept;
   void swap_pbos() noexcept;
 
+  std::unordered_map<int16_t, unsigned> angle_to_column;
+  std::unordered_map<unsigned, int16_t> column_to_angle;
   RendererConfig config;
   Window& window;
   Camera& camera;
