@@ -100,7 +100,7 @@ void Level::populate_segs(const Wad& wad) {
     glm::vec2& start = vertices[start_index];
     glm::vec2& end = vertices[end_index];
     Linedef& linedef = linedefs[linedef_index];
-    Sidedef* sidedef = (raw_seg.direction) ? linedef.front : linedef.back;
+    Sidedef* sidedef = (raw_seg.direction == 0) ? linedef.front : linedef.back;
     float angle = doom_angle_to_deg(raw_seg.angle);
     int16_t offset = raw_seg.offset;
 

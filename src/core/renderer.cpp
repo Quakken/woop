@@ -1,6 +1,7 @@
 #include "renderer.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 #include "glm/trigonometric.hpp"
@@ -78,7 +79,7 @@ void Frame::draw(DrawMode mode, const Node& node) {
   Node::Child farthest_child = !nearest_child;
 
   // FIXME: Remove this
-  std::swap(nearest_child, farthest_child);
+  // std::swap(nearest_child, farthest_child);
 
   draw_node_child(mode, node, nearest_child);
   draw_node_child(mode, node, farthest_child);
@@ -95,6 +96,9 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
   // Don't draw "null" segs
   if (invalid || !seg.sidedef)
     return;
+  // Only draw solid segs for now
+  if (seg.linedef.front && seg.linedef.back)
+    return;
 
   const Sector& sector = seg.sidedef->sector_facing;
   int16_t ceil = sector.ceiling.height;
@@ -109,16 +113,19 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
   // Get angle to each position
   float start_rad = std::atan2(start.y, start.x);
   float end_rad = std::atan2(end.y, end.x);
-  int16_t start_angle = rad_to_doom_angle(start_rad);
-  int16_t end_angle = rad_to_doom_angle(end_rad);
+
+  // These need to be made negative?
+  int16_t start_angle = -rad_to_doom_angle(start_rad);
+  int16_t end_angle = -rad_to_doom_angle(end_rad);
 
   // Transform angle by camera rotation
   start_angle -= deg_to_doom_angle(camera.get_rotation());
   end_angle -= deg_to_doom_angle(camera.get_rotation());
 
   // Back-face culling
-  if (end_angle - start_angle < deg_to_doom_angle(0))
-    return;
+  // Currently does not seem to be doing anything
+  // if (end_angle - start_angle < deg_to_doom_angle(0))
+  //   return;
 
   // Get scale for output columns
   float start_distance = std::sqrt(start.x * start.x + start.y * start.y);
@@ -139,6 +146,14 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
       static_cast<int>(static_cast<float>(renderer.get_img_size().y) / 2.0f +
                        (floor - camera.get_position().y) * end_scale);
 
+  // TODO: Remove me!
+  static std::unordered_map<std::string, Pixel> colors;
+  if (colors.find(seg.sidedef->middle_name) == colors.end()) {
+    colors.insert({seg.sidedef->middle_name,
+                   Pixel{rand() % 255, rand() % 255, 255, 255}});
+  }
+  renderer.config.fill_color = colors[seg.sidedef->middle_name];
+
   // Interpolation
   unsigned start_column = angle_to_column(start_angle);
   unsigned end_column = angle_to_column(end_angle);
@@ -148,6 +163,7 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
     float v = percent_between(angle, start_angle, end_angle);
     int floor_current = interpolate(v, floor_start, floor_end);
     int ceil_current = interpolate(v, ceil_start, ceil_end);
+
     unsigned floor_row = static_cast<unsigned>(
         std::clamp(floor_current, 0, static_cast<int>(renderer.size.y)));
     unsigned ceil_row = static_cast<unsigned>(

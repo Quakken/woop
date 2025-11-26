@@ -20,7 +20,7 @@
 woop::Window create_window() {
   woop::WindowConfig cfg = {
       // Configuration options go here
-      .resolution = {1280 / 4, 720 / 4},
+      .resolution = {1280 / 3, 720 / 3},
       .decorated = true,
   };
   return woop::Window{cfg};
@@ -30,7 +30,7 @@ woop::Camera create_camera(const woop::Window& window) {
   woop::CameraConfig cfg = {
       // Configuration options go here
       .position = {3000.0f, 0.0f, -4800.0f},
-      .fov = 45.0f,
+      .fov = 60.0f,
   };
   return woop::Camera{window, cfg};
 }
@@ -61,11 +61,11 @@ void move_camera(woop::Window& window, woop::Camera& cam) {
   cam.set_rotation(cam.get_rotation() + cursor_delta.x * 1.0f);
   cam.set_position(cam.get_position() +
                    glm::vec3{
-                       input.y * cos(glm::radians(cam.get_rotation())) -
-                           input.x * sin(glm::radians(cam.get_rotation())),
+                       -input.x * sin(glm::radians(cam.get_rotation())) -
+                           -input.y * cos(glm::radians(cam.get_rotation())),
                        0.0f,
-                       input.y * sin(glm::radians(cam.get_rotation())) +
-                           input.x * cos(glm::radians(cam.get_rotation())),
+                       -input.x * cos(glm::radians(cam.get_rotation())) +
+                           -input.y * sin(glm::radians(cam.get_rotation())),
                    });
   prev_cursor_pos = current_cursor_pos;
 }
