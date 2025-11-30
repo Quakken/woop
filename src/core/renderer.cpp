@@ -81,7 +81,7 @@ void Frame::draw(DrawMode mode, const Node& node) {
   Node::Child farthest_child = !nearest_child;
 
   // FIXME: Remove this
-  // std::swap(nearest_child, farthest_child);
+  std::swap(nearest_child, farthest_child);
 
   draw_node_child(mode, node, nearest_child);
   draw_node_child(mode, node, farthest_child);

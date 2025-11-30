@@ -19,7 +19,7 @@ Node::Child Node::get_nearest_child(const glm::vec2& point) const noexcept {
   float result =
       (point.x - partition_start.x) * (partition_end.y - partition_start.y) -
       (point.y - partition_start.y) * (partition_end.x - partition_start.x);
-  return (result > 0) ? Child::Left : Child::Right;
+  return (result < 0) ? Child::Left : Child::Right;
 }
 
 bool Node::is_node(Child child) const noexcept {

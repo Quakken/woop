@@ -182,10 +182,10 @@ void Level::populate_nodes(const Wad& wad) {
   for (const auto& raw_node : raw_data) {
     glm::vec2 part_start{
         raw_node.x_part_start,
-        raw_node.x_part_start + raw_node.x_part_delta,
+        raw_node.y_part_start,
     };
     glm::vec2 part_end{
-        raw_node.y_part_start,
+        raw_node.x_part_start + raw_node.x_part_delta,
         raw_node.y_part_start + raw_node.y_part_delta,
     };
     Node node{part_start, part_end};
