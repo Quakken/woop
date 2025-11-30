@@ -61,11 +61,11 @@ void move_camera(woop::Window& window, woop::Camera& cam) {
   cam.set_rotation(cam.get_rotation() + cursor_delta.x * 1.0f);
   cam.set_position(cam.get_position() +
                    glm::vec3{
-                       -input.x * sin(glm::radians(cam.get_rotation())) -
-                           -input.y * cos(glm::radians(cam.get_rotation())),
+                       -input.x * sin(glm::radians(cam.get_rotation())) +
+                           input.y * cos(glm::radians(cam.get_rotation())),
                        0.0f,
-                       -input.x * cos(glm::radians(cam.get_rotation())) +
-                           -input.y * sin(glm::radians(cam.get_rotation())),
+                       -input.x * cos(glm::radians(cam.get_rotation())) -
+                           input.y * sin(glm::radians(cam.get_rotation())),
                    });
   prev_cursor_pos = current_cursor_pos;
 }

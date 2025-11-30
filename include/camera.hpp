@@ -28,6 +28,9 @@ class Camera {
   Camera(const Window& window, const CameraConfig& cfg = CameraConfig{});
 
   glm::vec3 get_position() const noexcept { return config.position; }
+  glm::vec2 get_position_2d() const noexcept {
+    return glm::vec2{config.position.x, config.position.z};
+  }
   void set_position(const glm::vec3& new_pos) noexcept;
 
   float get_rotation() const noexcept { return config.rotation; }
