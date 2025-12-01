@@ -1,16 +1,16 @@
-#include "renderer.hpp"
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <string>
-#include <unordered_map>
-#include "glm/trigonometric.hpp"
-#include "glm/geometric.hpp"
-#include "log.hpp"
-#include "shader.hpp"
-#include "utils.hpp"
-#include "window.hpp"
+/**
+ * @file renderer.cpp
+ * @authors quak
+ * @brief Defines members of the Frame and Renderer classes.
+ */
+
+#include "renderer.hpp"          /* woop::Frame, woop::Renderer */
+#include "glm/trigonometric.hpp" /* glm::radians, glm::degrees */
+#include "utils.hpp"             /* UNUSED_PARAMETER */
+#include <algorithm>             /* std::swap, std::clamp */
+#include <cstdint>               /* int16_t */
+#include <cstdlib>               /* TEMP */
+#include <string>                /* std::string */
 
 namespace woop {
 Shader get_shader_from_cfg(const RendererConfig cfg) {
@@ -106,14 +106,6 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
   glm::vec2 end =
       rotate_point(seg.end - camera.get_position_2d(), camera.get_rotation());
 
-  // TODO: Remove me!
-  static std::unordered_map<std::string, Pixel> colors;
-  if (colors.find(seg.sidedef->middle_name) == colors.end()) {
-    colors.insert({seg.sidedef->middle_name,
-                   Pixel{rand() % 255, rand() % 255, 255, 255}});
-  }
-  renderer.set_fill_color(colors[seg.sidedef->middle_name]);
-
   if (!is_seg_visible(start, end))
     return;
 
@@ -148,7 +140,9 @@ void Frame::draw_column_solid(unsigned column, unsigned bottom, unsigned top) {
 }
 bool Frame::is_seg_visible(const glm::vec2& start,
                            const glm::vec2& end) const noexcept {
-  if (start.x < 0 && end.x < 0)
+  if (start.x < camera.get_near_plane() && end.x < camera.get_near_plane())
+    return false;
+  if (start.x > camera.get_far_plane() && end.x > camera.get_far_plane())
     return false;
 
   float fov = camera.get_fov();
@@ -233,7 +227,6 @@ Renderer::Renderer(Window& wdw, Camera& cam, const RendererConfig& cfg)
       static_cast<float>(size.x) / 2.0f /
       static_cast<float>(std::tan(glm::radians(camera.get_fov() / 2.0f)));
   gen_pbos();
-  gen_lookup_tables();
 }
 
 Frame Renderer::begin_frame() {
@@ -260,20 +253,6 @@ void Renderer::gen_pbos() {
   bind_pbo_front();
   glBufferData(GL_PIXEL_UNPACK_BUFFER, get_pixel_count() * sizeof(Pixel),
                nullptr, GL_STREAM_DRAW);
-}
-void Renderer::gen_lookup_tables() {
-  // Populate lookup table for angle->column based on resolution and FOV
-  int16_t fov = deg_to_doom_angle(camera.get_fov());
-  float screen_center = static_cast<float>(size.x) / 2.0f;
-  // Iterate over every angle within FOV
-  for (int16_t angle = -fov / 2; angle <= fov / 2; ++angle) {
-    // Calculate the column that the angle intersects with
-    float angle_rad = doom_angle_to_rad(angle);
-    float col_off = screen_plane_distance * std::tan(angle_rad);
-    unsigned col = static_cast<unsigned>(col_off + screen_center);
-    angle_to_column.insert({angle, col});
-    column_to_angle[col] = angle;
-  }
 }
 void Renderer::bind_pbo_back() const noexcept {
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_back);

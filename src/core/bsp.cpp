@@ -12,10 +12,6 @@ Node::Node(const glm::vec2& part_start, const glm::vec2& part_end)
     : partition_start(part_start), partition_end(part_end) {}
 
 Node::Child Node::get_nearest_child(const glm::vec2& point) const noexcept {
-  // glm::vec2 part_dir = partition_end - partition_start;
-  // float slope = part_dir.y / part_dir.x;
-  // float result =
-  //     slope * (partition_start.x - point.x) + point.y - partition_start.y;
   float result =
       (point.x - partition_start.x) * (partition_end.y - partition_start.y) -
       (point.y - partition_start.y) * (partition_end.x - partition_start.x);

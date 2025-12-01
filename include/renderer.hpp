@@ -1,3 +1,10 @@
+/**
+ * @file renderer.hpp
+ * @authors quak
+ * @brief Declares the Renderer and Frame classes, which allow levels to be
+ * drawn to the screen based on camera position.
+ */
+
 #pragma once
 
 #include "camera.hpp"       /* woop::Camera */
@@ -7,11 +14,12 @@
 #include "exception.hpp"    /* woop::Exception */
 #include "glad/glad.h"      /* OpenGL functions */
 
-#include "unordered_map"
-
 namespace woop {
 class Renderer;
 
+/**
+ * @brief Pixel data in woop (4 bytes, 0->255)
+ */
 using Pixel = glm::vec<4, std::byte>;
 
 /**
@@ -35,28 +43,65 @@ class Frame {
 
   Frame& operator=(const Frame& other) = delete;
 
+  /**
+   * @brief Clears the frame, setting all pixels to the same color.
+   */
   void clear(const Pixel& color);
+  /**
+   * @brief Draws a node to the frame.
+   */
   void draw(DrawMode mode, const Node& node);
+  /**
+   * @brief Draws a subsector to the frame.
+   */
   void draw(DrawMode mode, const Subsector& subsector);
+  /**
+   * @brief Draws a segg to the frame
+   */
   void draw(DrawMode mode, const Seg& seg);
 
  private:
   friend Renderer;
   Frame(Renderer& renderer);
 
+  /**
+   * @brief Draws the child of a node.
+   */
   void draw_node_child(DrawMode mode, const Node& node, Node::Child child);
 
+  /**
+   * @brief Maps the pixel buffer in OpenGL, allowing data to be written.
+   */
   void map_buffer();
+  /**
+   * @brief Updates the texture that the output image is bound to.
+   */
   void update_display_texture();
+  /**
+   * @brief Returns the pixel at the given coordinates.
+   */
   Pixel& get_buffer_element(unsigned x, unsigned y);
 
+  /**
+   * @brief Draws a solid column to the screen.
+   */
   void draw_column_solid(unsigned column, unsigned bottom, unsigned top);
+  /**
+   * @brief Draws a wireframe column to the screen.
+   */
   void draw_column_wireframe(unsigned column,
                              unsigned bottom,
                              unsigned top) = delete;
 
+  /**
+   * @brief Returns true if a seg can be seen from the player's current
+   * position.
+   */
   bool is_seg_visible(const glm::vec2& start,
                       const glm::vec2& end) const noexcept;
+  /**
+   * @brief Returns true if a seg is opaque.
+   */
   bool is_seg_solid(const Seg& seg) const noexcept;
   /**
    * @brief Rotates a point around the origin.
@@ -83,7 +128,7 @@ class Frame {
   unsigned get_column(const glm::vec2& view);
   /**
    * @brief Returns the scale that a point should be drawn at, given its
-   * horizontal distance from the camera.
+   * distance from the camera.
    */
   float get_scale(float distance);
   /**
@@ -99,9 +144,18 @@ class Frame {
   bool invalid;
 };
 
+/**
+ * @brief Exception thrown when a Renderer or Frame encounters an error.
+ */
 class RenderException : public Exception {
  public:
-  enum class Type { InvalidConfig, FrameError };
+  /**
+   * @brief Type of exception encountered.
+   */
+  enum class Type {
+    InvalidConfig,
+    FrameError,
+  };
   RenderException(Type type, const std::string_view& what)
       : Exception(what), t(type) {}
   Type type() const noexcept { return t; }
@@ -132,34 +186,71 @@ class Renderer {
            Camera& camera,
            const RendererConfig& cfg = RendererConfig{});
 
+  /**
+   * @brief Creates a new frame to be drawn to the screen.
+   */
   Frame begin_frame();
 
+  /**
+   * @brief Returns the size of the output image.
+   */
   glm::uvec2 get_img_size() const noexcept;
+  /**
+   * @brief Returns the number of pixels in the output image.
+   */
   std::size_t get_pixel_count() const noexcept;
+  /**
+   * @brief Returns the OpenGL texture unit that the output image is bound to.
+   */
   unsigned get_texture_unit() const noexcept;
+  /**
+   * @brief Returns the distance from the screen plane to the camera.
+   * The screen plane is the view-space plane where 1 unit = 1 screen column.
+   */
   float get_screen_plane_distance() const noexcept {
     return screen_plane_distance;
   }
+  /**
+   * @brief Sets the renderer's fill color.
+   */
   void set_fill_color(const Pixel& color) noexcept {
     config.fill_color = color;
   }
+  /**
+   * @brief Returns the renderer's fill color.
+   */
   Pixel get_fill_color() const noexcept { return config.fill_color; }
+  /**
+   * @brief Sets the renderer's clear color.
+   */
   void set_clear_color(const Pixel& color) noexcept {
     config.clear_color = color;
   }
+  /**
+   * @brief Returns the renderer's clear color.
+   */
   Pixel get_clear_color() const noexcept { return config.clear_color; }
 
  private:
   friend Frame;
 
+  /**
+   * @brief Generates the front and back PBOs with OpenGL.
+   */
   void gen_pbos();
-  void gen_lookup_tables();
+  /**
+   * @brief Binds the back (hidden) PBO in OpenGL.
+   */
   void bind_pbo_back() const noexcept;
+  /**
+   * @brief Binds the front (shown) PBO in OpenGL.
+   */
   void bind_pbo_front() const noexcept;
+  /**
+   * @brief Swaps the front and back PBOs.
+   */
   void swap_pbos() noexcept;
 
-  std::unordered_map<int16_t, unsigned> angle_to_column;
-  std::unordered_map<unsigned, int16_t> column_to_angle;
   RendererConfig config;
   Window& window;
   Camera& camera;

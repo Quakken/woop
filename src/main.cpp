@@ -38,7 +38,8 @@ woop::Camera create_camera(const woop::Window& window) {
 woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
   woop::RendererConfig cfg = {
       // Configuration options go here
-      .clear_color = woop::Pixel{125, 125, 125, 255},
+      .clear_color = woop::Pixel{27, 27, 37, 255},
+      .fill_color = woop::Pixel{215, 212, 206, 255},
   };
   return woop::Renderer(window, camera, cfg);
 }
@@ -91,6 +92,7 @@ void run_loop() {
   woop::Wad doom1 = {"assets/wads/doom1.wad"};
   woop::Level e1m1 = {doom1, "E1M1"};
 
+  /* TEMP: Set camera position to player 1 start */
   woop::Lump things_lump = doom1.get_lump("E1M1", "THINGS");
   std::vector<Thing> things = things_lump.get_data_as<Thing>();
   for (const auto& thing : things) {
@@ -101,15 +103,12 @@ void run_loop() {
     }
   }
 
-  float time = glfwGetTime();
   while (!window.should_close()) {
     glfwPollEvents();
-    // camera.set_rotation(camera.get_rotation() + (glfwGetTime() - time) *
-    // 360);
     move_camera(window, camera);
+
     woop::Frame frame = renderer.begin_frame();
     frame.draw(woop::DrawMode::Solid, e1m1.get_root_node());
-    time = glfwGetTime();
   }
 }
 
