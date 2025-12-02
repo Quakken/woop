@@ -12,7 +12,21 @@
 #include <cstdlib>               /* TEMP */
 #include <string>                /* std::string */
 
+#include <unordered_map> /* TEMP */
+
 namespace woop {
+// TEMP
+Pixel get_random_color() {
+  return Pixel{rand(), rand(), rand(), 255};
+}
+
+Pixel get_texture_color(const std::string& name) {
+  static std::unordered_map<std::string, Pixel> colormap;
+  if (colormap.find(name) == colormap.end())
+    colormap.insert({name, get_random_color()});
+  return colormap[name];
+}
+
 Shader get_shader_from_cfg(const RendererConfig cfg) {
   if (!cfg.shaders.vert_path.empty() && !cfg.shaders.frag_path.empty())
     return Shader::from_file(cfg.shaders.vert_path, cfg.shaders.frag_path);
@@ -24,6 +38,7 @@ Shader get_shader_from_cfg(const RendererConfig cfg) {
 
 Frame::Frame(Renderer& rndr)
     : renderer(rndr),
+      visible_rows(renderer.get_img_size().x, {0, renderer.get_img_size().y}),
       display_rect(rndr.display_rect),
       camera(rndr.camera),
       invalid(false) {
@@ -31,6 +46,7 @@ Frame::Frame(Renderer& rndr)
 }
 Frame::Frame(Frame&& other)
     : renderer(other.renderer),
+      visible_rows(renderer.get_img_size().x, {0, renderer.get_img_size().y}),
       display_rect(other.renderer.display_rect),
       camera(other.renderer.camera),
       buffer(other.buffer),
@@ -61,15 +77,15 @@ void Frame::insert_occluded_range(unsigned start, unsigned end) noexcept {
     return;
 
   // Insert new range while keeping list sorted
-  std::list<ColumnRange>::iterator found = occluded_cols.begin();
+  std::list<UnsignedRange>::iterator found = occluded_cols.begin();
   while (found != occluded_cols.end() && found->start < start)
     ++found;
-  occluded_cols.emplace(found, ColumnRange{start, end});
+  occluded_cols.emplace(found, UnsignedRange{start, end});
 
   // Re-sort and merge occlusion list
-  std::list<ColumnRange> new_occluded_cols{occluded_cols.front()};
+  std::list<UnsignedRange> new_occluded_cols{occluded_cols.front()};
   for (const auto& range : occluded_cols) {
-    ColumnRange& prev = new_occluded_cols.back();
+    UnsignedRange& prev = new_occluded_cols.back();
     if (prev.end >= range.start)
       prev.end = std::max(prev.end, range.end);
     else
@@ -78,11 +94,11 @@ void Frame::insert_occluded_range(unsigned start, unsigned end) noexcept {
   occluded_cols = new_occluded_cols;
 }
 
-std::vector<ColumnRange> Frame::get_visible_subsegs(unsigned start,
-                                                    unsigned end) noexcept {
-  std::vector<ColumnRange> out{ColumnRange{start, end}};
+std::vector<UnsignedRange> Frame::get_visible_subsegs(unsigned start,
+                                                      unsigned end) noexcept {
+  std::vector<UnsignedRange> out{UnsignedRange{start, end}};
   for (const auto& range : occluded_cols) {
-    ColumnRange& prev = out.back();
+    UnsignedRange& prev = out.back();
     // Occluded range start might be overlapping with previous range
     if (range.start > prev.start) {
       unsigned prev_end = prev.end;
@@ -90,7 +106,7 @@ std::vector<ColumnRange> Frame::get_visible_subsegs(unsigned start,
       prev.end = std::min(prev_end, range.start);
       // Re-insert the rest of the range, if not fully occluded
       if (range.end < end)
-        out.emplace_back(ColumnRange{std::min(prev_end, range.end), end});
+        out.emplace_back(UnsignedRange{std::min(prev_end, range.end), end});
     }
     // Occluded range end overlaps with previous range's start
     else if (range.end > prev.start)
@@ -146,9 +162,6 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
 
   if (invalid || is_image_done() || !seg.sidedef)
     return;
-  // Only draw solid segs for now
-  if (!is_seg_solid(seg))
-    return;
 
   glm::vec2 start =
       rotate_point(seg.start - camera.get_position_2d(), camera.get_rotation());
@@ -172,7 +185,7 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
     insert_occluded_range(start_column, end_column);
 }
 void Frame::draw_subsegs(const Seg& seg,
-                         const std::vector<ColumnRange>& subsegs,
+                         const std::vector<UnsignedRange>& subsegs,
                          const glm::vec2& start,
                          const glm::vec2& end) {
   float start_screen = get_screen_plane_y(start);
@@ -192,14 +205,59 @@ void Frame::draw_subsegs(const Seg& seg,
                 static_cast<float>(end_screen - start_screen);
       float scale = start_scale + v * (end_scale - start_scale);
 
-      glm::uvec2 range = get_column_range(floor, ceil, scale);
-      draw_column_solid(col, range.x, range.y);
+      // Drawing solid segs
+      if (is_seg_solid(seg)) {
+        UnsignedRange range = get_row_range(floor, ceil, scale);
+        // Clip occluded rows
+        range = clip_row_range(col, range);
+
+        // TODO: Remove me!
+        renderer.set_fill_color(get_texture_color(seg.sidedef->middle_name));
+
+        draw_column_solid(col, range);
+      }
+      // Drawing "window" segs
+      else {
+        Sector& opposite = (seg.sidedef == seg.linedef.front)
+                               ? seg.linedef.back->sector_facing
+                               : seg.linedef.front->sector_facing;
+        int16_t opposite_floor = opposite.floor.height;
+        int16_t opposite_ceil = opposite.ceiling.height;
+        // We are looking through the "back" of the window (don't draw anything)
+        UnsignedRange window_range;
+        if (floor > opposite_floor && ceil < opposite_ceil) {
+          window_range = get_row_range(floor, ceil, scale);
+        }
+        // We are looking through the "front" of the window (draw the frame)
+        else {
+          window_range = get_row_range(opposite_floor, opposite_ceil, scale);
+          UnsignedRange bottom_range =
+              get_row_range(floor, opposite_floor, scale);
+          UnsignedRange top_range = get_row_range(opposite_ceil, ceil, scale);
+
+          bottom_range = clip_row_range(col, bottom_range);
+          top_range = clip_row_range(col, top_range);
+
+          // TODO: Remove me!
+          renderer.set_fill_color(get_texture_color(seg.sidedef->lower_name));
+          draw_column_solid(col, bottom_range);
+
+          // TODO: Remove me!
+          renderer.set_fill_color(get_texture_color(seg.sidedef->upper_name));
+          draw_column_solid(col, top_range);
+        }
+        window_range = clip_row_range(col, window_range);
+        visible_rows[col].start =
+            std::max(window_range.start, visible_rows[col].start);
+        visible_rows[col].end =
+            std::min(window_range.end, visible_rows[col].end);
+      }
     }
   }
 }
 
-void Frame::draw_column_solid(unsigned column, unsigned bottom, unsigned top) {
-  for (unsigned row = bottom; row < top; ++row) {
+void Frame::draw_column_solid(unsigned column, const UnsignedRange& range) {
+  for (unsigned row = range.start; row < range.end; ++row) {
     get_buffer_element(column, row) = renderer.get_fill_color();
   }
 }
@@ -257,7 +315,7 @@ float Frame::get_scale(float distance) {
   float scale = renderer.get_screen_plane_distance() / distance;
   return std::clamp(scale, min_scale, max_scale);
 }
-glm::uvec2 Frame::get_column_range(int16_t floor, int16_t ceil, float scale) {
+UnsignedRange Frame::get_row_range(int16_t floor, int16_t ceil, float scale) {
   float screen_half = static_cast<float>(renderer.get_img_size().y) / 2.0f;
   float floor_adjusted = (floor - camera.get_position().y) * scale;
   float ceil_adjusted = (ceil - camera.get_position().y) * scale;
@@ -266,7 +324,16 @@ glm::uvec2 Frame::get_column_range(int16_t floor, int16_t ceil, float scale) {
   int max_row = static_cast<int>(renderer.get_img_size().y);
   floor_int = std::clamp(floor_int, 0, max_row);
   ceil_int = std::clamp(ceil_int, 0, max_row);
-  return {floor_int, ceil_int};
+  return {static_cast<unsigned>(floor_int), static_cast<unsigned>(ceil_int)};
+}
+UnsignedRange Frame::clip_row_range(unsigned column,
+                                    const UnsignedRange& range) {
+  unsigned start = visible_rows[column].start;
+  unsigned end = visible_rows[column].end;
+  return {
+      std::clamp(range.start, start, end),
+      std::clamp(range.end, start, end),
+  };
 }
 
 void Frame::draw_node_child(DrawMode mode,

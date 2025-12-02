@@ -31,7 +31,7 @@ enum class DrawMode {
   Textured,
 };
 
-struct ColumnRange {
+struct UnsignedRange {
   unsigned start;
   unsigned end;
 };
@@ -75,8 +75,8 @@ class Frame {
   bool is_image_done() const noexcept;
 
   void insert_occluded_range(unsigned start, unsigned end) noexcept;
-  std::vector<ColumnRange> get_visible_subsegs(unsigned start,
-                                               unsigned end) noexcept;
+  std::vector<UnsignedRange> get_visible_subsegs(unsigned start,
+                                                 unsigned end) noexcept;
 
   /**
    * @brief Draws the child of a node.
@@ -87,7 +87,7 @@ class Frame {
    * seg.
    */
   void draw_subsegs(const Seg& seg,
-                    const std::vector<ColumnRange>& subsegs,
+                    const std::vector<UnsignedRange>& subsegs,
                     const glm::vec2& start,
                     const glm::vec2& end);
 
@@ -107,13 +107,12 @@ class Frame {
   /**
    * @brief Draws a solid column to the screen.
    */
-  void draw_column_solid(unsigned column, unsigned bottom, unsigned top);
+  void draw_column_solid(unsigned column, const UnsignedRange& rows);
   /**
    * @brief Draws a wireframe column to the screen.
    */
   void draw_column_wireframe(unsigned column,
-                             unsigned bottom,
-                             unsigned top) = delete;
+                             const UnsignedRange& rows) = delete;
 
   /**
    * @brief Returns true if a seg can be seen from the player's current
@@ -157,10 +156,16 @@ class Frame {
    * @brief Returns the first (x) and last (y) rows of a column that should be
    * drawn, given a floor, ceiling, and scale factor.
    */
-  glm::uvec2 get_column_range(int16_t floor, int16_t ceil, float scale);
+  UnsignedRange get_row_range(int16_t floor, int16_t ceil, float scale);
+  /**
+   * @brief Clips the given column range based on which rows are currently
+   * visible.
+   */
+  UnsignedRange clip_row_range(unsigned column, const UnsignedRange& range);
 
-  std::list<ColumnRange> occluded_cols;
+  std::list<UnsignedRange> occluded_cols;
   Renderer& renderer;
+  std::vector<UnsignedRange> visible_rows;
   DisplayRect& display_rect;
   Camera& camera;
   Pixel* buffer;

@@ -46,15 +46,19 @@ woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
 
 void move_camera(woop::Window& window, woop::Camera& cam) {
   static glm::dvec2 prev_cursor_pos{};
-  glm::vec2 input{};
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_W) == GLFW_PRESS)
-    input.y++;
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_S) == GLFW_PRESS)
-    input.y--;
+  glm::vec3 input{};
   if (glfwGetKey(window.get_wrapped(), GLFW_KEY_D) == GLFW_PRESS)
     input.x++;
   if (glfwGetKey(window.get_wrapped(), GLFW_KEY_A) == GLFW_PRESS)
     input.x--;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_C) == GLFW_PRESS)
+    input.y++;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_X) == GLFW_PRESS)
+    input.y--;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_W) == GLFW_PRESS)
+    input.z++;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_S) == GLFW_PRESS)
+    input.z--;
   glm::dvec2 current_cursor_pos;
   glfwGetCursorPos(window.get_wrapped(), &current_cursor_pos.x,
                    &current_cursor_pos.y);
@@ -63,10 +67,10 @@ void move_camera(woop::Window& window, woop::Camera& cam) {
   cam.set_position(cam.get_position() +
                    glm::vec3{
                        -input.x * sin(glm::radians(cam.get_rotation())) +
-                           input.y * cos(glm::radians(cam.get_rotation())),
-                       0.0f,
+                           input.z * cos(glm::radians(cam.get_rotation())),
+                       input.y,
                        -input.x * cos(glm::radians(cam.get_rotation())) -
-                           input.y * sin(glm::radians(cam.get_rotation())),
+                           input.z * sin(glm::radians(cam.get_rotation())),
                    });
   prev_cursor_pos = current_cursor_pos;
 }
