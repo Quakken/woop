@@ -310,7 +310,7 @@ unsigned Frame::get_column(float screen_y) {
 float Frame::get_scale(float distance) {
   constexpr float min_scale = 0.0025f;
   constexpr float max_scale = 250'000.0f;
-  if (distance == 0)
+  if (distance <= camera.get_near_plane())
     return max_scale;
   float scale = renderer.get_screen_plane_distance() / distance;
   return std::clamp(scale, min_scale, max_scale);
