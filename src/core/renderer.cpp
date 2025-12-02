@@ -47,6 +47,58 @@ Frame::~Frame() {
   renderer.window.swap_buffers();
 }
 
+bool Frame::is_image_done() const noexcept {
+  // All columns have been drawn to:
+  // ocluded range = {0, renderer.get_img_size().x};
+  if (occluded_cols.size() != 1)
+    return false;
+  return occluded_cols.front().start == 0 &&
+         occluded_cols.front().end == renderer.get_img_size().x;
+}
+void Frame::insert_occluded_range(unsigned start, unsigned end) noexcept {
+  // Invalid range
+  if (start > end)
+    return;
+
+  // Insert new range while keeping list sorted
+  std::list<ColumnRange>::iterator found = occluded_cols.begin();
+  while (found != occluded_cols.end() && found->start < start)
+    ++found;
+  occluded_cols.emplace(found, ColumnRange{start, end});
+
+  // Re-sort and merge occlusion list
+  std::list<ColumnRange> new_occluded_cols{occluded_cols.front()};
+  for (const auto& range : occluded_cols) {
+    ColumnRange& prev = new_occluded_cols.back();
+    if (prev.end >= range.start)
+      prev.end = std::max(prev.end, range.end);
+    else
+      new_occluded_cols.emplace_back(range);
+  }
+  occluded_cols = new_occluded_cols;
+}
+
+std::vector<ColumnRange> Frame::get_visible_subsegs(unsigned start,
+                                                    unsigned end) noexcept {
+  std::vector<ColumnRange> out{ColumnRange{start, end}};
+  for (const auto& range : occluded_cols) {
+    ColumnRange& prev = out.back();
+    // Occluded range start might be overlapping with previous range
+    if (range.start > prev.start) {
+      unsigned prev_end = prev.end;
+      // Clip previous range's start if necessary
+      prev.end = std::min(prev_end, range.start);
+      // Re-insert the rest of the range, if not fully occluded
+      if (range.end < end)
+        out.emplace_back(ColumnRange{std::min(prev_end, range.end), end});
+    }
+    // Occluded range end overlaps with previous range's start
+    else if (range.end > prev.start)
+      prev.start = range.end;
+  }
+  return out;
+}
+
 void Frame::map_buffer() {
   renderer.bind_pbo_back();
   void* raw_buffer = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
@@ -70,24 +122,21 @@ Pixel& Frame::get_buffer_element(unsigned x, unsigned y) {
 void Frame::clear(const Pixel& color) {
   if (invalid)
     return;
-  for (std::size_t i = 0; i < renderer.get_pixel_count(); ++i)
-    buffer[i] = color;
+  std::fill(buffer, buffer + renderer.get_pixel_count(), color);
+  occluded_cols.clear();
 }
 
 void Frame::draw(DrawMode mode, const Node& node) {
-  if (invalid)
+  if (invalid || is_image_done())
     return;
   Node::Child nearest_child = node.get_nearest_child(camera.get_position_2d());
   Node::Child farthest_child = !nearest_child;
-
-  // FIXME: Remove this
-  std::swap(nearest_child, farthest_child);
 
   draw_node_child(mode, node, nearest_child);
   draw_node_child(mode, node, farthest_child);
 }
 void Frame::draw(DrawMode mode, const Subsector& subsector) {
-  if (invalid)
+  if (invalid || is_image_done())
     return;
   for (const Seg* seg : subsector.segs)
     draw(mode, *seg);
@@ -95,7 +144,7 @@ void Frame::draw(DrawMode mode, const Subsector& subsector) {
 void Frame::draw(DrawMode mode, const Seg& seg) {
   UNUSED_PARAMETER(mode);
 
-  if (invalid || !seg.sidedef)
+  if (invalid || is_image_done() || !seg.sidedef)
     return;
   // Only draw solid segs for now
   if (!is_seg_solid(seg))
@@ -109,27 +158,43 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
   if (!is_seg_visible(start, end))
     return;
 
-  const Sector& sector = seg.sidedef->sector_facing;
-  const int16_t ceil = sector.ceiling.height;
-  const int16_t floor = sector.floor.height;
-
   float start_screen = get_screen_plane_y(start);
   float end_screen = get_screen_plane_y(end);
   unsigned start_column = get_column(start_screen);
   unsigned end_column = get_column(end_screen);
 
+  // All "subsegments", or visible fragments of the current seg
+  std::vector subsegs = get_visible_subsegs(start_column, end_column);
+  if (subsegs.size() == 0)
+    return;
+  draw_subsegs(seg, subsegs, start, end);
+  if (is_seg_solid(seg))
+    insert_occluded_range(start_column, end_column);
+}
+void Frame::draw_subsegs(const Seg& seg,
+                         const std::vector<ColumnRange>& subsegs,
+                         const glm::vec2& start,
+                         const glm::vec2& end) {
+  float start_screen = get_screen_plane_y(start);
+  float end_screen = get_screen_plane_y(end);
   float start_scale = get_scale(start.x);
   float end_scale = get_scale(end.x);
 
-  for (unsigned col = start_column; col < end_column; ++col) {
-    // Scale interpolation using screen plane coordinates as reference
-    float screen = get_screen_plane_y(col);
-    float v = static_cast<float>(screen - start_screen) /
-              static_cast<float>(end_screen - start_screen);
-    float scale = start_scale + v * (end_scale - start_scale);
+  Sector& sector = seg.sidedef->sector_facing;
+  int16_t floor = sector.floor.height;
+  int16_t ceil = sector.ceiling.height;
 
-    glm::uvec2 range = get_column_range(floor, ceil, scale);
-    draw_column_solid(col, range.x, range.y);
+  for (const auto& subseg : subsegs) {
+    for (unsigned col = subseg.start; col < subseg.end; ++col) {
+      // Scale interpolation using screen plane coordinates as reference
+      float screen = get_screen_plane_y(col);
+      float v = static_cast<float>(screen - start_screen) /
+                static_cast<float>(end_screen - start_screen);
+      float scale = start_scale + v * (end_scale - start_scale);
+
+      glm::uvec2 range = get_column_range(floor, ceil, scale);
+      draw_column_solid(col, range.x, range.y);
+    }
   }
 }
 
@@ -140,11 +205,13 @@ void Frame::draw_column_solid(unsigned column, unsigned bottom, unsigned top) {
 }
 bool Frame::is_seg_visible(const glm::vec2& start,
                            const glm::vec2& end) const noexcept {
+  // Clip planes
   if (start.x < camera.get_near_plane() && end.x < camera.get_near_plane())
     return false;
   if (start.x > camera.get_far_plane() && end.x > camera.get_far_plane())
     return false;
 
+  // FOV culling
   float fov = camera.get_fov();
   float start_angle = glm::degrees(atan2(start.y, start.x));
   float end_angle = glm::degrees(atan2(end.y, end.x));
