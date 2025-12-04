@@ -4,13 +4,15 @@
  * @brief Defines members of the Frame and Renderer classes.
  */
 
-#include "renderer.hpp"          /* woop::Frame, woop::Renderer */
+#include "renderer.hpp" /* woop::Frame, woop::Renderer */
+#include "glm/ext/vector_float2.hpp"
 #include "glm/trigonometric.hpp" /* glm::radians, glm::degrees */
-#include "utils.hpp"             /* UNUSED_PARAMETER */
-#include <algorithm>             /* std::swap, std::clamp */
-#include <cstdint>               /* int16_t */
-#include <cstdlib>               /* TEMP */
-#include <string>                /* std::string */
+#include "log.hpp"
+#include "utils.hpp" /* UNUSED_PARAMETER */
+#include <algorithm> /* std::swap, std::clamp */
+#include <cstdint>   /* int16_t */
+#include <cstdlib>   /* TEMP */
+#include <string>    /* std::string */
 
 #include <unordered_map> /* TEMP */
 
@@ -93,24 +95,79 @@ void Frame::insert_occluded_range(unsigned start, unsigned end) noexcept {
   }
   occluded_cols = new_occluded_cols;
 }
+void Frame::clip_seg(glm::vec2& start, glm::vec2& end) noexcept {
+  float fov_slope = tan(glm::radians(camera.get_fov() / 2.0f));
+  float fov_y_at_start_x = fov_slope * std::abs(start.x);
+  float fov_y_at_end_x = fov_slope * std::abs(end.x);
+
+  bool clip_start = start.x < 0 || std::abs(start.y) > fov_y_at_start_x;
+  bool clip_end = end.x < 0 || std::abs(end.y) > fov_y_at_end_x;
+  if (!clip_start && !clip_end)
+    return;
+
+  if (clip_start) {
+    float dir = (start.y > 0) ? 1 : -1;
+    glm::vec2 intersect = get_line_intersection(
+        start, end, glm::vec2{0.0f}, glm::vec2{1.0f, fov_slope * dir});
+    start = intersect;
+  }
+  if (clip_end) {
+    float dir = (end.y > 0) ? 1 : -1;
+    glm::vec2 intersect = get_line_intersection(
+        end, start, glm::vec2{0.0f}, glm::vec2{1.0f, fov_slope * dir});
+    end = intersect;
+  }
+}
+glm::vec2 Frame::get_line_intersection(const glm::vec2& start_1,
+                                       const glm::vec2& end_1,
+                                       const glm::vec2& start_2,
+                                       const glm::vec2& end_2) noexcept {
+  // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+  glm::vec2 v[] = {
+      start_1,
+      end_1,
+      start_2,
+      end_2,
+  };
+  return {
+      ((v[0].x * v[1].y - v[0].y * v[1].x) * (v[2].x - v[3].x) -
+       (v[0].x - v[1].x) * (v[2].x * v[3].y - v[2].y * v[3].x)) /
+          ((v[0].x - v[1].x) * (v[2].y - v[3].y) -
+           (v[0].y - v[1].y) * (v[2].x - v[3].x)),
+      ((v[0].x * v[1].y - v[0].y * v[1].x) * (v[2].y - v[3].y) -
+       (v[0].y - v[1].y) * (v[2].x * v[3].y - v[2].y * v[3].x)) /
+          ((v[0].x - v[1].x) * (v[2].y - v[3].y) -
+           (v[0].y - v[1].y) * (v[2].x - v[3].x)),
+  };
+}
 
 std::vector<UnsignedRange> Frame::get_visible_subsegs(unsigned start,
                                                       unsigned end) noexcept {
   std::vector<UnsignedRange> out{UnsignedRange{start, end}};
   for (const auto& range : occluded_cols) {
     UnsignedRange& prev = out.back();
+
     // Occluded range start might be overlapping with previous range
     if (range.start > prev.start) {
       unsigned prev_end = prev.end;
       // Clip previous range's start if necessary
-      prev.end = std::min(prev_end, range.start);
+      if (range.start < prev.end)
+        prev.end = range.start;
       // Re-insert the rest of the range, if not fully occluded
-      if (range.end < end)
-        out.emplace_back(UnsignedRange{std::min(prev_end, range.end), end});
+      if (range.end < prev_end)
+        out.emplace_back(UnsignedRange{range.end, prev_end});
     }
     // Occluded range end overlaps with previous range's start
-    else if (range.end > prev.start)
+    else if (range.end > prev.start) {
       prev.start = range.end;
+    }
+
+    if (prev.start > prev.end) {
+      if (out.size() > 1)
+        out.erase(out.end() - 1);
+      else
+        return std::vector<UnsignedRange>{};
+    }
   }
   return out;
 }
@@ -170,6 +227,7 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
 
   if (!is_seg_visible(start, end))
     return;
+  clip_seg(start, end);
 
   float start_screen = get_screen_plane_y(start);
   float end_screen = get_screen_plane_y(end);
@@ -188,8 +246,6 @@ void Frame::draw_subsegs(const Seg& seg,
                          const std::vector<UnsignedRange>& subsegs,
                          const glm::vec2& start,
                          const glm::vec2& end) {
-  float start_screen = get_screen_plane_y(start);
-  float end_screen = get_screen_plane_y(end);
   float start_scale = get_scale(start.x);
   float end_scale = get_scale(end.x);
 
@@ -199,10 +255,13 @@ void Frame::draw_subsegs(const Seg& seg,
 
   for (const auto& subseg : subsegs) {
     for (unsigned col = subseg.start; col < subseg.end; ++col) {
-      // Scale interpolation using screen plane coordinates as reference
-      float screen = get_screen_plane_y(col);
-      float v = static_cast<float>(screen - start_screen) /
-                static_cast<float>(end_screen - start_screen);
+      // Interpolate scale via angle
+      float angle_start = atan2(start.y, start.x);
+      float angle_end = atan2(end.y, end.x);
+      float angle_current =
+          atan2(get_screen_plane_y(col), renderer.get_screen_plane_distance());
+      float v = (angle_current - angle_start) / (angle_end - angle_start);
+      v = std::clamp(v, 0.0f, 1.0f);
       float scale = start_scale + v * (end_scale - start_scale);
 
       // Drawing solid segs
@@ -263,19 +322,16 @@ void Frame::draw_column_solid(unsigned column, const UnsignedRange& range) {
 }
 bool Frame::is_seg_visible(const glm::vec2& start,
                            const glm::vec2& end) const noexcept {
-  // Clip planes
-  if (start.x < camera.get_near_plane() && end.x < camera.get_near_plane())
-    return false;
+  // Far planes
   if (start.x > camera.get_far_plane() && end.x > camera.get_far_plane())
     return false;
 
   // FOV culling
-  float fov = camera.get_fov();
-  float start_angle = glm::degrees(atan2(start.y, start.x));
-  float end_angle = glm::degrees(atan2(end.y, end.x));
-  if (start_angle > fov / 2.0f && end_angle > fov / 2.0f)
-    return false;
-  if (start_angle < -fov / 2.0f && end_angle < -fov / 2.0f)
+  float fov_slope = tan(glm::radians(camera.get_fov() / 2.0f));
+  if ((start.x < camera.get_near_plane() ||
+       std::abs(start.y) > fov_slope * std::abs(start.x)) &&
+      (end.x < camera.get_near_plane() ||
+       std::abs(end.y) > fov_slope * std::abs(end.x)))
     return false;
 
   return true;
@@ -292,7 +348,8 @@ glm::vec2 Frame::rotate_point(const glm::vec2& point,
   };
 }
 float Frame::get_screen_plane_y(const glm::vec2& view) noexcept {
-  float slope = view.y / view.x;
+  float slope = view.y / std::clamp(std::abs(view.x), camera.get_near_plane(),
+                                    camera.get_far_plane());
   return slope * renderer.get_screen_plane_distance();
 }
 float Frame::get_screen_plane_y(unsigned column) noexcept {
@@ -309,7 +366,7 @@ unsigned Frame::get_column(float screen_y) {
 }
 float Frame::get_scale(float distance) {
   constexpr float min_scale = 0.0025f;
-  constexpr float max_scale = 250'000.0f;
+  constexpr float max_scale = 5'000.0f;
   if (distance <= camera.get_near_plane())
     return max_scale;
   float scale = renderer.get_screen_plane_distance() / distance;
