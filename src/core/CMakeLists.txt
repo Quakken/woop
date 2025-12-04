@@ -4,6 +4,9 @@ add_library(woop_core STATIC
   bsp.cpp
   window.cpp
   camera.cpp
+  display_rect.cpp
+  renderer.cpp
+  shader.cpp
 )
 
 target_include_directories(woop_core PUBLIC

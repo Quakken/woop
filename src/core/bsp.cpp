@@ -12,17 +12,10 @@ Node::Node(const glm::vec2& part_start, const glm::vec2& part_end)
     : partition_start(part_start), partition_end(part_end) {}
 
 Node::Child Node::get_nearest_child(const glm::vec2& point) const noexcept {
-  // Get the normal of the partition
-  glm::vec2 part_dir = partition_end - partition_start;
-  glm::vec2 part_normal = {-part_dir.y, part_dir.x};
-
-  // Get relative "closeness" of the two directions
-  glm::vec2 point_dir = point - partition_start;
-  double dot = glm::dot(part_normal, point_dir);
-
-  // If dot is 0, the point is on the line, so it doesn't matter which child is
-  // returned.
-  return (dot < 0) ? Child::Left : Child::Right;
+  float result =
+      (point.x - partition_start.x) * (partition_end.y - partition_start.y) -
+      (point.y - partition_start.y) * (partition_end.x - partition_start.x);
+  return (result < 0) ? Child::Left : Child::Right;
 }
 
 bool Node::is_node(Child child) const noexcept {

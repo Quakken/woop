@@ -6,12 +6,10 @@
 
 #include "level.hpp"
 #include "bsp.hpp"
+#include "log.hpp"
+#include "utils.hpp"
 
 namespace woop {
-constexpr float doom_angle_to_deg(int16_t angle) {
-  return static_cast<float>(angle) * 180.0f / 32767.0f;
-}
-
 Level::Level() : loaded(false) {}
 
 Level::Level(const Wad& wad, const std::string& level_name) {
@@ -102,7 +100,7 @@ void Level::populate_segs(const Wad& wad) {
     glm::vec2& start = vertices[start_index];
     glm::vec2& end = vertices[end_index];
     Linedef& linedef = linedefs[linedef_index];
-    Sidedef& sidedef = (raw_seg.direction) ? *linedef.front : *linedef.back;
+    Sidedef* sidedef = (raw_seg.direction == 0) ? linedef.front : linedef.back;
     float angle = doom_angle_to_deg(raw_seg.angle);
     int16_t offset = raw_seg.offset;
 
@@ -184,10 +182,10 @@ void Level::populate_nodes(const Wad& wad) {
   for (const auto& raw_node : raw_data) {
     glm::vec2 part_start{
         raw_node.x_part_start,
-        raw_node.x_part_start + raw_node.x_part_delta,
+        raw_node.y_part_start,
     };
     glm::vec2 part_end{
-        raw_node.y_part_start,
+        raw_node.x_part_start + raw_node.x_part_delta,
         raw_node.y_part_start + raw_node.y_part_delta,
     };
     Node node{part_start, part_end};

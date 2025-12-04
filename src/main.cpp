@@ -6,29 +6,113 @@
  */
 
 #include "exception.hpp" /* woop::Exception */
-#include "log.hpp"       /* woop::log, woop::log_error, woop::log_fatal */
-#include "utils.hpp"     /* UNUSED_PARAMETER */
-#include "window.hpp"    /* woop::Window */
+#include "glm/fwd.hpp"
+#include "log.hpp"      /* woop::log, woop::log_error, woop::log_fatal */
+#include "utils.hpp"    /* UNUSED_PARAMETER */
+#include "window.hpp"   /* woop::Window */
+#include "camera.hpp"   /* woop::Camera */
+#include "renderer.hpp" /* woop::Renderer */
+#include "wad.hpp"      /* woop::Wad */
 
 /**
  * @brief Creates woop's primary window, based on configuration.
  */
 woop::Window create_window() {
-  woop::WindowConfig cfg{
+  woop::WindowConfig cfg = {
       // Configuration options go here
+      .resolution = {1280 / 3, 720 / 3},
+      .decorated = true,
   };
   return woop::Window{cfg};
 }
+
+woop::Camera create_camera(const woop::Window& window) {
+  woop::CameraConfig cfg = {
+      // Configuration options go here
+      .position = {3000.0f, 0.0f, -4800.0f},
+      .fov = 60.0f,
+  };
+  return woop::Camera{window, cfg};
+}
+
+woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
+  woop::RendererConfig cfg = {
+      // Configuration options go here
+      .clear_color = woop::Pixel{27, 27, 37, 255},
+      .fill_color = woop::Pixel{215, 212, 206, 255},
+  };
+  return woop::Renderer(window, camera, cfg);
+}
+
+void move_camera(woop::Window& window, woop::Camera& cam) {
+  static glm::dvec2 prev_cursor_pos{};
+  glm::vec3 input{};
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_D) == GLFW_PRESS)
+    input.x++;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_A) == GLFW_PRESS)
+    input.x--;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_C) == GLFW_PRESS)
+    input.y++;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_X) == GLFW_PRESS)
+    input.y--;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_W) == GLFW_PRESS)
+    input.z++;
+  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_S) == GLFW_PRESS)
+    input.z--;
+  glm::dvec2 current_cursor_pos;
+  glfwGetCursorPos(window.get_wrapped(), &current_cursor_pos.x,
+                   &current_cursor_pos.y);
+  glm::dvec2 cursor_delta = current_cursor_pos - prev_cursor_pos;
+  cam.set_rotation(cam.get_rotation() + cursor_delta.x * 1.0f);
+  cam.set_position(cam.get_position() +
+                   glm::vec3{
+                       -input.x * sin(glm::radians(cam.get_rotation())) +
+                           input.z * cos(glm::radians(cam.get_rotation())),
+                       input.y,
+                       -input.x * cos(glm::radians(cam.get_rotation())) -
+                           input.z * sin(glm::radians(cam.get_rotation())),
+                   });
+  prev_cursor_pos = current_cursor_pos;
+}
+
+struct Thing {
+  int16_t x;
+  int16_t y;
+  int16_t angle;
+  int16_t type;
+  int16_t flags;
+};
 
 /**
  * @brief Woop's main loop. Blocks until application is closed.
  */
 void run_loop() {
+  /* Renderer data */
   woop::Window window = create_window();
+  woop::Camera camera = create_camera(window);
+  woop::Renderer renderer = create_renderer(window, camera);
+
+  /* Level data */
+  woop::Wad doom1 = {"assets/wads/doom1.wad"};
+  woop::Level e1m1 = {doom1, "E1M1"};
+
+  /* TEMP: Set camera position to player 1 start */
+  woop::Lump things_lump = doom1.get_lump("E1M1", "THINGS");
+  std::vector<Thing> things = things_lump.get_data_as<Thing>();
+  for (const auto& thing : things) {
+    if (thing.type == 1) {
+      camera.set_position(glm::vec3{thing.x, 35.0f, thing.y});
+      camera.set_rotation(doom_angle_to_deg(thing.angle) - 90);
+      break;
+    }
+  }
 
   while (!window.should_close()) {
-    window.swap_buffers();
     glfwPollEvents();
+    move_camera(window, camera);
+
+    woop::Frame frame = renderer.begin_frame();
+    frame.draw(woop::DrawMode::Solid, e1m1.get_root_node());
   }
 }
 

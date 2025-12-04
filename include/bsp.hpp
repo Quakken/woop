@@ -40,6 +40,9 @@ class BSPException : public Exception {
 class Node {
  public:
   enum class Child { Left, Right };
+  constexpr friend Child operator!(Child child) {
+    return (child == Child::Left) ? Child::Right : Child::Left;
+  }
 
  public:
   Node(const glm::vec2& part_start, const glm::vec2& part_end);
