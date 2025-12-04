@@ -298,7 +298,7 @@ void Frame::draw_subsegs(const Seg& seg,
         int16_t opposite_ceil = opposite.ceiling.height;
         // We are looking through the "back" of the window (don't draw anything)
         UnsignedRange window_range;
-        if (floor > opposite_floor && ceil < opposite_ceil) {
+        if (floor > opposite_floor || ceil < opposite_ceil) {
           window_range = get_row_range(floor, ceil, scale);
         }
         // We are looking through the "front" of the window (draw the frame)
