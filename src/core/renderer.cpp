@@ -246,6 +246,8 @@ void Frame::draw_subsegs(const Seg& seg,
                          const std::vector<UnsignedRange>& subsegs,
                          const glm::vec2& start,
                          const glm::vec2& end) {
+  float screen_start = get_screen_plane_y(start);
+  float screen_end = get_screen_plane_y(end);
   float start_scale = get_scale(start.x);
   float end_scale = get_scale(end.x);
 
@@ -255,12 +257,9 @@ void Frame::draw_subsegs(const Seg& seg,
 
   for (const auto& subseg : subsegs) {
     for (unsigned col = subseg.start; col < subseg.end; ++col) {
-      // Interpolate scale via angle
-      float angle_start = atan2(start.y, start.x);
-      float angle_end = atan2(end.y, end.x);
-      float angle_current =
-          atan2(get_screen_plane_y(col), renderer.get_screen_plane_distance());
-      float v = (angle_current - angle_start) / (angle_end - angle_start);
+      // Interpolate scale screen plane position
+      float screen = get_screen_plane_y(col);
+      float v = (screen - screen_start) / (screen_end - screen_start);
       v = std::clamp(v, 0.0f, 1.0f);
       float scale = start_scale + v * (end_scale - start_scale);
 
