@@ -13,6 +13,7 @@
 #include "display_rect.hpp" /* woop::DisplayRect */
 #include "exception.hpp"    /* woop::Exception */
 #include "glad/glad.h"      /* OpenGL functions */
+#include <optional>         /* std::optional */
 
 namespace woop {
 class Renderer;
@@ -77,11 +78,12 @@ class Frame {
   void insert_occluded_range(unsigned start, unsigned end) noexcept;
   std::vector<UnsignedRange> get_visible_subsegs(unsigned start,
                                                  unsigned end) noexcept;
-  void clip_seg(glm::vec2& start, glm::vec2& end) noexcept;
-  static glm::vec2 get_line_intersection(const glm::vec2& start_1,
-                                         const glm::vec2& end_1,
-                                         const glm::vec2& start_2,
-                                         const glm::vec2& end_2) noexcept;
+  bool clip_seg(glm::vec2& start, glm::vec2& end) noexcept;
+  static std::optional<glm::vec2> get_segment_intersection(
+      const glm::vec2& start_1,
+      const glm::vec2& end_1,
+      const glm::vec2& start_2,
+      const glm::vec2& end_2) noexcept;
 
   /**
    * @brief Draws the child of a node.

@@ -12,7 +12,8 @@
 #include <algorithm> /* std::swap, std::clamp */
 #include <cstdint>   /* int16_t */
 #include <cstdlib>   /* TEMP */
-#include <string>    /* std::string */
+#include <optional>
+#include <string> /* std::string */
 
 #include <unordered_map> /* TEMP */
 
@@ -95,7 +96,7 @@ void Frame::insert_occluded_range(unsigned start, unsigned end) noexcept {
   }
   occluded_cols = new_occluded_cols;
 }
-void Frame::clip_seg(glm::vec2& start, glm::vec2& end) noexcept {
+bool Frame::clip_seg(glm::vec2& start, glm::vec2& end) noexcept {
   float fov_slope = tan(glm::radians(camera.get_fov() / 2.0f));
   float fov_y_at_start_x = fov_slope * std::abs(start.x);
   float fov_y_at_end_x = fov_slope * std::abs(end.x);
@@ -103,42 +104,55 @@ void Frame::clip_seg(glm::vec2& start, glm::vec2& end) noexcept {
   bool clip_start = start.x < 0 || std::abs(start.y) > fov_y_at_start_x;
   bool clip_end = end.x < 0 || std::abs(end.y) > fov_y_at_end_x;
   if (!clip_start && !clip_end)
-    return;
+    return true;
 
   if (clip_start) {
     float dir = (start.y > 0) ? 1 : -1;
-    glm::vec2 intersect = get_line_intersection(
-        start, end, glm::vec2{0.0f}, glm::vec2{1.0f, fov_slope * dir});
-    start = intersect;
+    std::optional<glm::vec2> intersect = get_segment_intersection(
+        start, end, glm::vec2{0.0f},
+        glm::vec2{camera.get_far_plane(),
+                  fov_slope * dir * camera.get_far_plane()});
+    if (intersect)
+      start = intersect.value();
+    else
+      return false;
   }
   if (clip_end) {
     float dir = (end.y > 0) ? 1 : -1;
-    glm::vec2 intersect = get_line_intersection(
-        end, start, glm::vec2{0.0f}, glm::vec2{1.0f, fov_slope * dir});
-    end = intersect;
+    std::optional<glm::vec2> intersect = get_segment_intersection(
+        end, start, glm::vec2{0.0f},
+        glm::vec2{camera.get_far_plane(),
+                  fov_slope * dir * camera.get_far_plane()});
+    if (intersect)
+      end = intersect.value();
+    else
+      return false;
   }
+  return true;
 }
-glm::vec2 Frame::get_line_intersection(const glm::vec2& start_1,
-                                       const glm::vec2& end_1,
-                                       const glm::vec2& start_2,
-                                       const glm::vec2& end_2) noexcept {
-  // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
-  glm::vec2 v[] = {
-      start_1,
-      end_1,
-      start_2,
-      end_2,
-  };
-  return {
-      ((v[0].x * v[1].y - v[0].y * v[1].x) * (v[2].x - v[3].x) -
-       (v[0].x - v[1].x) * (v[2].x * v[3].y - v[2].y * v[3].x)) /
-          ((v[0].x - v[1].x) * (v[2].y - v[3].y) -
-           (v[0].y - v[1].y) * (v[2].x - v[3].x)),
-      ((v[0].x * v[1].y - v[0].y * v[1].x) * (v[2].y - v[3].y) -
-       (v[0].y - v[1].y) * (v[2].x * v[3].y - v[2].y * v[3].x)) /
-          ((v[0].x - v[1].x) * (v[2].y - v[3].y) -
-           (v[0].y - v[1].y) * (v[2].x - v[3].x)),
-  };
+std::optional<glm::vec2> Frame::get_segment_intersection(
+    const glm::vec2& start_1,
+    const glm::vec2& end_1,
+    const glm::vec2& start_2,
+    const glm::vec2& end_2) noexcept {
+  // Algorithm from https://stackoverflow.com/a/1968345
+  glm::vec2 delta_1 = end_1 - start_1;
+  glm::vec2 delta_2 = end_2 - start_2;
+
+  float denom = (-delta_2.x * delta_1.y + delta_1.x * delta_2.y);
+  if (denom == 0)
+    return std::nullopt;
+
+  float s =
+      (-delta_1.y * (start_1.x - end_1.x) + delta_1.x * (start_1.y - end_1.y)) /
+      denom;
+  float t = (delta_2.x * (start_1.y - start_2.y) -
+             delta_2.y * (start_1.x - start_2.y)) /
+            denom;
+
+  if (0 <= s && s <= 1 && 0 <= t && t <= 1)
+    return glm::vec2{start_1.x + (t * delta_1.x), start_1.y + (t * delta_1.y)};
+  return std::nullopt;
 }
 
 std::vector<UnsignedRange> Frame::get_visible_subsegs(unsigned start,
@@ -227,7 +241,8 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
 
   if (!is_seg_visible(start, end))
     return;
-  clip_seg(start, end);
+  if (!clip_seg(start, end))
+    return;
 
   float start_screen = get_screen_plane_y(start);
   float end_screen = get_screen_plane_y(end);
@@ -322,16 +337,20 @@ void Frame::draw_column_solid(unsigned column, const UnsignedRange& range) {
 bool Frame::is_seg_visible(const glm::vec2& start,
                            const glm::vec2& end) const noexcept {
   // Far planes
+  if (start.x < camera.get_near_plane() && end.x < camera.get_near_plane())
+    return false;
   if (start.x > camera.get_far_plane() && end.x > camera.get_far_plane())
     return false;
 
   // FOV culling
   float fov_slope = tan(glm::radians(camera.get_fov() / 2.0f));
-  if ((start.x < camera.get_near_plane() ||
-       std::abs(start.y) > fov_slope * std::abs(start.x)) &&
-      (end.x < camera.get_near_plane() ||
-       std::abs(end.y) > fov_slope * std::abs(end.x)))
-    return false;
+  // Both endpoints are on same side of camera (left or right)
+  if (start.y * end.y > 0) {
+    // Both endpoints lie beyond the FOV plane
+    if (std::abs(start.y) > fov_slope * std::abs(start.x) &&
+        std::abs(end.y) > fov_slope * std::abs(end.x))
+      return false;
+  }
 
   return true;
 }
