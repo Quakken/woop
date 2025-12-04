@@ -13,6 +13,7 @@
 #include "display_rect.hpp" /* woop::DisplayRect */
 #include "exception.hpp"    /* woop::Exception */
 #include "glad/glad.h"      /* OpenGL functions */
+#include "glm/vec2.hpp"     /* glm::vec2 */
 #include <optional>         /* std::optional */
 
 namespace woop {
@@ -28,7 +29,6 @@ using Pixel = glm::vec<4, std::byte>;
  */
 enum class DrawMode {
   Solid,
-  Wireframe,
   Textured,
 };
 
@@ -75,10 +75,27 @@ class Frame {
    */
   bool is_image_done() const noexcept;
 
+  /**
+   * @brief Inserts a range of columns into the occlusion buffer.
+   */
   void insert_occluded_range(unsigned start, unsigned end) noexcept;
+  /**
+   * @brief Returns the collection of visible fragments of the given seg.
+   */
   std::vector<UnsignedRange> get_visible_subsegs(unsigned start,
                                                  unsigned end) noexcept;
+  /**
+   * @brief Clips a seg so that both of its endpoints are visible. Modifies both
+   * of the given values.
+   * @param start Start of the seg
+   * @param end End of the seg
+   * @return True if clipping was successful, false if not. Start and end are
+   * modified to be within a visible range.
+   */
   bool clip_seg(glm::vec2& start, glm::vec2& end) noexcept;
+  /**
+   * @brief Returns the intersection point of two line segments.
+   */
   static std::optional<glm::vec2> get_segment_intersection(
       const glm::vec2& start_1,
       const glm::vec2& end_1,
@@ -93,7 +110,8 @@ class Frame {
    * @brief Draws all visible fragments of a (potentially) partially occluded
    * seg.
    */
-  void draw_subsegs(const Seg& seg,
+  void draw_subsegs(DrawMode mode,
+                    const Seg& seg,
                     const std::vector<UnsignedRange>& subsegs,
                     const glm::vec2& start,
                     const glm::vec2& end);
@@ -115,11 +133,6 @@ class Frame {
    * @brief Draws a solid column to the screen.
    */
   void draw_column_solid(unsigned column, const UnsignedRange& rows);
-  /**
-   * @brief Draws a wireframe column to the screen.
-   */
-  void draw_column_wireframe(unsigned column,
-                             const UnsignedRange& rows) = delete;
 
   /**
    * @brief Returns true if a seg can be seen from the player's current
@@ -170,9 +183,9 @@ class Frame {
    */
   UnsignedRange clip_row_range(unsigned column, const UnsignedRange& range);
 
-  std::list<UnsignedRange> occluded_cols;
   Renderer& renderer;
   std::vector<UnsignedRange> visible_rows;
+  std::list<UnsignedRange> occluded_cols;
   DisplayRect& display_rect;
   Camera& camera;
   Pixel* buffer;

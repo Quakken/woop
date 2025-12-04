@@ -4,25 +4,21 @@
  * @brief Defines members of the Frame and Renderer classes.
  */
 
-#include "renderer.hpp" /* woop::Frame, woop::Renderer */
-#include "glm/ext/vector_float2.hpp"
-#include "glm/trigonometric.hpp" /* glm::radians, glm::degrees */
-#include "log.hpp"
-#include "utils.hpp" /* UNUSED_PARAMETER */
-#include <algorithm> /* std::swap, std::clamp */
-#include <cstdint>   /* int16_t */
-#include <cstdlib>   /* TEMP */
-#include <optional>
-#include <string> /* std::string */
+#include "renderer.hpp"          /* woop::Frame, woop::Renderer */
+#include "log.hpp"               /* log_error */
+#include "glm/trigonometric.hpp" /* glm::radians */
+#include <algorithm>             /* std::swap, std::clamp, std::max, std::min */
+#include <string>                /* std::string */
 
-#include <unordered_map> /* TEMP */
+#include <unordered_map> /* TODO: Remove me! */
 
 namespace woop {
-// TEMP
+// TODO: Remove me!
 Pixel get_random_color() {
   return Pixel{rand(), rand(), rand(), 255};
 }
 
+// TODO: Remove me!
 Pixel get_texture_color(const std::string& name) {
   static std::unordered_map<std::string, Pixel> colormap;
   if (colormap.find(name) == colormap.end())
@@ -101,33 +97,31 @@ bool Frame::clip_seg(glm::vec2& start, glm::vec2& end) noexcept {
   float fov_y_at_start_x = fov_slope * std::abs(start.x);
   float fov_y_at_end_x = fov_slope * std::abs(end.x);
 
+  // Don't clip if both endpoints are visible
   bool clip_start = start.x < 0 || std::abs(start.y) > fov_y_at_start_x;
   bool clip_end = end.x < 0 || std::abs(end.y) > fov_y_at_end_x;
   if (!clip_start && !clip_end)
     return true;
 
-  if (clip_start) {
-    float dir = (start.y > 0) ? 1 : -1;
+  // Clips p1 to the view plane, if necessary. Returns true if clipping was a
+  // success, and false if not.
+  auto clip_endpoint = [&](glm::vec2& p1, const glm::vec2& p2) {
+    float dir = (p1.y > 0) ? 1 : -1;
     std::optional<glm::vec2> intersect = get_segment_intersection(
-        start, end, glm::vec2{0.0f},
+        p1, p2, glm::vec2{0.0f},
         glm::vec2{camera.get_far_plane(),
                   fov_slope * dir * camera.get_far_plane()});
     if (intersect)
-      start = intersect.value();
+      p1 = intersect.value();
     else
       return false;
-  }
-  if (clip_end) {
-    float dir = (end.y > 0) ? 1 : -1;
-    std::optional<glm::vec2> intersect = get_segment_intersection(
-        end, start, glm::vec2{0.0f},
-        glm::vec2{camera.get_far_plane(),
-                  fov_slope * dir * camera.get_far_plane()});
-    if (intersect)
-      end = intersect.value();
-    else
-      return false;
-  }
+    return true;
+  };
+
+  if (clip_start && !clip_endpoint(start, end))
+    return false;
+  if (clip_end && !clip_endpoint(end, start))
+    return false;
   return true;
 }
 std::optional<glm::vec2> Frame::get_segment_intersection(
@@ -211,6 +205,8 @@ void Frame::clear(const Pixel& color) {
     return;
   std::fill(buffer, buffer + renderer.get_pixel_count(), color);
   occluded_cols.clear();
+  visible_rows = std::vector<UnsignedRange>(renderer.get_img_size().x,
+                                            {0, renderer.get_img_size().y});
 }
 
 void Frame::draw(DrawMode mode, const Node& node) {
@@ -229,8 +225,6 @@ void Frame::draw(DrawMode mode, const Subsector& subsector) {
     draw(mode, *seg);
 }
 void Frame::draw(DrawMode mode, const Seg& seg) {
-  UNUSED_PARAMETER(mode);
-
   if (invalid || is_image_done() || !seg.sidedef)
     return;
 
@@ -253,11 +247,12 @@ void Frame::draw(DrawMode mode, const Seg& seg) {
   std::vector subsegs = get_visible_subsegs(start_column, end_column);
   if (subsegs.size() == 0)
     return;
-  draw_subsegs(seg, subsegs, start, end);
+  draw_subsegs(mode, seg, subsegs, start, end);
   if (is_seg_solid(seg))
     insert_occluded_range(start_column, end_column);
 }
-void Frame::draw_subsegs(const Seg& seg,
+void Frame::draw_subsegs(DrawMode mode,
+                         const Seg& seg,
                          const std::vector<UnsignedRange>& subsegs,
                          const glm::vec2& start,
                          const glm::vec2& end) {
@@ -286,8 +281,14 @@ void Frame::draw_subsegs(const Seg& seg,
 
         // TODO: Remove me!
         renderer.set_fill_color(get_texture_color(seg.sidedef->middle_name));
-
-        draw_column_solid(col, range);
+        switch (mode) {
+          case DrawMode::Solid:
+            draw_column_solid(col, range);
+            break;
+          default:
+            log_error("Unknown draw mode provided!");
+            break;
+        }
       }
       // Drawing "window" segs
       else {
@@ -298,12 +299,13 @@ void Frame::draw_subsegs(const Seg& seg,
         int16_t opposite_ceil = opposite.ceiling.height;
         // We are looking through the "back" of the window (don't draw anything)
         UnsignedRange window_range;
-        if (floor > opposite_floor || ceil < opposite_ceil) {
+        if (floor > opposite_floor && ceil < opposite_ceil) {
           window_range = get_row_range(floor, ceil, scale);
         }
         // We are looking through the "front" of the window (draw the frame)
         else {
-          window_range = get_row_range(opposite_floor, opposite_ceil, scale);
+          window_range = get_row_range(std::max(floor, opposite_floor),
+                                       std::min(ceil, opposite_ceil), scale);
           UnsignedRange bottom_range =
               get_row_range(floor, opposite_floor, scale);
           UnsignedRange top_range = get_row_range(opposite_ceil, ceil, scale);
@@ -311,13 +313,21 @@ void Frame::draw_subsegs(const Seg& seg,
           bottom_range = clip_row_range(col, bottom_range);
           top_range = clip_row_range(col, top_range);
 
-          // TODO: Remove me!
-          renderer.set_fill_color(get_texture_color(seg.sidedef->lower_name));
-          draw_column_solid(col, bottom_range);
-
-          // TODO: Remove me!
-          renderer.set_fill_color(get_texture_color(seg.sidedef->upper_name));
-          draw_column_solid(col, top_range);
+          switch (mode) {
+            case DrawMode::Solid:
+              // TODO: Remove me!
+              renderer.set_fill_color(
+                  get_texture_color(seg.sidedef->lower_name));
+              draw_column_solid(col, bottom_range);
+              // TODO: Remove me!
+              renderer.set_fill_color(
+                  get_texture_color(seg.sidedef->upper_name));
+              draw_column_solid(col, top_range);
+              break;
+            default:
+              log_error("Unknown draw mode provided!");
+              break;
+          }
         }
         window_range = clip_row_range(col, window_range);
         visible_rows[col].start =
