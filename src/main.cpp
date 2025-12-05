@@ -7,11 +7,13 @@
 
 #include "exception.hpp" /* woop::Exception */
 #include "glm/fwd.hpp"
+#include "level.hpp"
 #include "log.hpp"      /* woop::log, woop::log_error, woop::log_fatal */
 #include "utils.hpp"    /* UNUSED_PARAMETER */
 #include "window.hpp"   /* woop::Window */
 #include "camera.hpp"   /* woop::Camera */
 #include "renderer.hpp" /* woop::Renderer */
+#include "player.hpp"   /* woop::Player */
 #include "wad.hpp"      /* woop::Wad */
 
 /**
@@ -20,13 +22,13 @@
 woop::Window create_window() {
   woop::WindowConfig cfg = {
       // Configuration options go here
-      .resolution = {1280 / 3, 720 / 3},
+      .resolution = {320, 200},
       .decorated = true,
   };
   return woop::Window{cfg};
 }
 
-woop::Camera create_camera(const woop::Window& window) {
+woop::Camera create_camera(woop::Window& window) {
   woop::CameraConfig cfg = {
       // Configuration options go here
       .position = {3000.0f, 0.0f, -4800.0f},
@@ -44,35 +46,11 @@ woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
   return woop::Renderer(window, camera, cfg);
 }
 
-void move_camera(woop::Window& window, woop::Camera& cam) {
-  static glm::dvec2 prev_cursor_pos{};
-  glm::vec3 input{};
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_D) == GLFW_PRESS)
-    input.x++;
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_A) == GLFW_PRESS)
-    input.x--;
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_C) == GLFW_PRESS)
-    input.y++;
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_X) == GLFW_PRESS)
-    input.y--;
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_W) == GLFW_PRESS)
-    input.z++;
-  if (glfwGetKey(window.get_wrapped(), GLFW_KEY_S) == GLFW_PRESS)
-    input.z--;
-  glm::dvec2 current_cursor_pos;
-  glfwGetCursorPos(window.get_wrapped(), &current_cursor_pos.x,
-                   &current_cursor_pos.y);
-  glm::dvec2 cursor_delta = current_cursor_pos - prev_cursor_pos;
-  cam.set_rotation(cam.get_rotation() + cursor_delta.x * 1.0f);
-  cam.set_position(cam.get_position() +
-                   glm::vec3{
-                       -input.x * sin(glm::radians(cam.get_rotation())) +
-                           input.z * cos(glm::radians(cam.get_rotation())),
-                       input.y,
-                       -input.x * cos(glm::radians(cam.get_rotation())) -
-                           input.z * sin(glm::radians(cam.get_rotation())),
-                   });
-  prev_cursor_pos = current_cursor_pos;
+woop::Player create_player(woop::Camera& camera, const woop::Level& level) {
+  woop::PlayerConfig cfg = {
+      // Configuration options go here
+  };
+  return woop::Player{camera, level, cfg};
 }
 
 struct Thing {
@@ -96,8 +74,11 @@ void run_loop() {
   woop::Wad doom1 = {"assets/wads/doom1.wad"};
   woop::Level e1m1 = {doom1, "E1M1"};
 
+  /* Player */
+  woop::Player player = create_player(camera, e1m1);
+
   /* TEMP: Set camera position to player 1 start */
-  woop::Lump things_lump = doom1.get_lump("E1M1", "THINGS");
+  woop::Lump things_lump = doom1.get_lump("E1M2", "THINGS");
   std::vector<Thing> things = things_lump.get_data_as<Thing>();
   for (const auto& thing : things) {
     if (thing.type == 1) {
@@ -107,12 +88,19 @@ void run_loop() {
     }
   }
 
+  float time = glfwGetTime();
   while (!window.should_close()) {
+    /* Calculate time since last update */
+    float dt = glfwGetTime() - time;
+    time = glfwGetTime();
     glfwPollEvents();
-    move_camera(window, camera);
 
+    /* Move player */
+    player.update(dt);
+
+    /* Draw level */
     woop::Frame frame = renderer.begin_frame();
-    frame.draw(woop::DrawMode::Solid, e1m1.get_root_node());
+    frame.draw(woop::DrawMode::Solid, player.get_level().get_root_node());
   }
 }
 

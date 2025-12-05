@@ -334,6 +334,8 @@ void Frame::draw_subsegs(DrawMode mode,
             std::max(window_range.start, visible_rows[col].start);
         visible_rows[col].end =
             std::min(window_range.end, visible_rows[col].end);
+        if (visible_rows[col].start > visible_rows[col].end)
+          visible_rows[col].start = visible_rows[col].end;
       }
     }
   }

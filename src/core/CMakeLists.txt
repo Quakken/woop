@@ -7,6 +7,7 @@ add_library(woop_core STATIC
   display_rect.cpp
   renderer.cpp
   shader.cpp
+  player.cpp
 )
 
 target_include_directories(woop_core PUBLIC
