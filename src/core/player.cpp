@@ -17,10 +17,13 @@ constexpr int16_t player_start_thing = 1;
 
 Player::Player(Camera& cam, const Level& lvl, const PlayerConfig& conf)
     : config(conf), camera(cam), horiz_vel(0.0f), vert_vel(0.0f) {
-  glfwSetKeyCallback(camera.get_window().get_wrapped(), key_callback);
-  glfwSetCursorPosCallback(camera.get_window().get_wrapped(),
-                           cursor_position_callback);
+  GLFWwindow* window = camera.get_window().get_wrapped();
+  glfwSetKeyCallback(window, key_callback);
+  glfwSetCursorPosCallback(window, cursor_position_callback);
   set_level(lvl);
+  glfwSetWindowFocusCallback(window, window_focus_callback);
+  // Disable cursor
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void Player::update(float dt) {
@@ -211,6 +214,14 @@ void Player::cursor_position_callback(GLFWwindow* window,
   float cursor_current = static_cast<float>(x_pos);
   mouse_delta = cursor_current - cursor_prev;
   cursor_prev = cursor_current;
+}
+
+void Player::window_focus_callback(GLFWwindow* window, int focused) {
+  // Show cursor when focus is lost
+  if (focused)
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  else
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 float Player::get_floor_height() {

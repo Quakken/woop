@@ -49,7 +49,8 @@ woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
 woop::Player create_player(woop::Camera& camera, const woop::Level& level) {
   woop::PlayerConfig cfg = {
       // Configuration options go here
-      .enable_flight = true,
+      .move_speed = 300.0f,
+      .enable_flight = false,
   };
   return woop::Player{camera, level, cfg};
 }

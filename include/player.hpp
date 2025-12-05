@@ -70,6 +70,7 @@ class Player {
   static void cursor_position_callback(GLFWwindow* window,
                                        double xpos,
                                        double ypos);
+  static void window_focus_callback(GLFWwindow* window, int focused);
 
   void update_position(float dt);
   void update_rotation();
