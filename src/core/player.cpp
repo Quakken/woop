@@ -1,13 +1,18 @@
+/**
+ * @file player.cpp
+ * @authors quak
+ * @brief Defines members of the Player class.
+ */
+
 #include "player.hpp"
 #include <stdexcept>
 #include "GLFW/glfw3.h"
-#include "glm/common.hpp"
 #include "glm/geometric.hpp"
 #include "level.hpp"
 #include "utils.hpp"
-#include "log.hpp"
 
 namespace woop {
+// "Type" of the Player 1 start Thing (https://doomwiki.org/wiki/Thing_typesq)
 constexpr int16_t player_start_thing = 1;
 
 Player::Player(Camera& cam, const Level& lvl, const PlayerConfig& conf)

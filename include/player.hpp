@@ -1,11 +1,21 @@
+/**
+ * @file player.hpp
+ * @authors quak
+ * @brief Defines the Player class, which can be used to move a camera through a
+ * level with first-person controls.
+ */
+
 #pragma once
 
-#include "camera.hpp"
-#include "level.hpp"
+#include "camera.hpp"   /* woop::Camera */
+#include "level.hpp"    /* woop::Level */
 #include "glm/vec2.hpp" /* glm::vec2 */
-#include "GLFW/glfw3.h"
+#include "GLFW/glfw3.h" /* GLFWwindow */
 
 namespace woop {
+/**
+ * @broef Configuration data for the player controller.
+ */
 struct PlayerConfig {
   float camera_height = 30.0f;
   float gravity = 9.8f * 100.0f;
@@ -16,6 +26,11 @@ struct PlayerConfig {
   bool enable_mouse = true;
   bool enable_flight = false;
 };
+
+/**
+ * @brief Allows for a camera to be moved around a level with first-person
+ * controls.
+ */
 class Player {
  public:
   Player(Camera& camera, const Level& level, const PlayerConfig& config);
@@ -55,6 +70,7 @@ class Player {
   static void cursor_position_callback(GLFWwindow* window,
                                        double xpos,
                                        double ypos);
+
   void update_position(float dt);
   void update_rotation();
   void update_current_subsector();
