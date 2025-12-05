@@ -8,8 +8,10 @@
 #include "log.hpp"
 
 namespace woop {
+constexpr int16_t player_start_thing = 1;
+
 Player::Player(Camera& cam, const Level& lvl, const PlayerConfig& conf)
-    : config(conf), camera(cam) {
+    : config(conf), camera(cam), horiz_vel(0.0f), vert_vel(0.0f) {
   glfwSetKeyCallback(camera.get_window().get_wrapped(), key_callback);
   glfwSetCursorPosCallback(camera.get_window().get_wrapped(),
                            cursor_position_callback);
@@ -24,6 +26,19 @@ void Player::update(float dt) {
 void Player::set_level(const Level& lvl) noexcept {
   level = &lvl;
   is_subsector_dirty = true;
+
+  // Search for player start position
+  const std::vector<Thing>& things = level->get_things();
+  for (const auto& thing : things) {
+    if (thing.type == player_start_thing) {
+      camera.set_position(glm::vec3{
+          thing.position.x,
+          config.camera_height,
+          thing.position.y,
+      });
+      camera.set_rotation(thing.angle - 90.0f);
+    }
+  }
 }
 
 const Subsector& Player::get_current_subsector() noexcept {
@@ -35,7 +50,7 @@ const Subsector& Player::get_current_subsector() noexcept {
 void Player::update_current_subsector() {
   const Node* node = &level->get_root_node();
   Node::Child nearest_child = node->get_nearest_child(camera.get_position_2d());
-  while (!node->is_subsector(nearest_child)) {
+  while (node->is_node(nearest_child)) {
     node = &node->get_node(nearest_child);
     nearest_child = node->get_nearest_child(camera.get_position_2d());
   }

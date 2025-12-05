@@ -32,7 +32,7 @@ woop::Camera create_camera(woop::Window& window) {
   woop::CameraConfig cfg = {
       // Configuration options go here
       .position = {3000.0f, 0.0f, -4800.0f},
-      .fov = 60.0f,
+      .fov = 90.0f,
   };
   return woop::Camera{window, cfg};
 }
@@ -49,6 +49,7 @@ woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
 woop::Player create_player(woop::Camera& camera, const woop::Level& level) {
   woop::PlayerConfig cfg = {
       // Configuration options go here
+      .enable_flight = true,
   };
   return woop::Player{camera, level, cfg};
 }
@@ -72,21 +73,15 @@ void run_loop() {
 
   /* Level data */
   woop::Wad doom1 = {"assets/wads/doom1.wad"};
-  woop::Level e1m1 = {doom1, "E1M1"};
+  woop::Level levels[] = {
+      woop::Level{doom1, "E1M1"},
+      woop::Level{doom1, "E1M2"},
+      woop::Level{doom1, "E1M3"},
+      woop::Level{doom1, "E1M4"},
+  };
 
   /* Player */
-  woop::Player player = create_player(camera, e1m1);
-
-  /* TEMP: Set camera position to player 1 start */
-  woop::Lump things_lump = doom1.get_lump("E1M2", "THINGS");
-  std::vector<Thing> things = things_lump.get_data_as<Thing>();
-  for (const auto& thing : things) {
-    if (thing.type == 1) {
-      camera.set_position(glm::vec3{thing.x, 35.0f, thing.y});
-      camera.set_rotation(doom_angle_to_deg(thing.angle) - 90);
-      break;
-    }
-  }
+  woop::Player player = create_player(camera, levels[0]);
 
   float time = glfwGetTime();
   while (!window.should_close()) {
@@ -97,6 +92,12 @@ void run_loop() {
 
     /* Move player */
     player.update(dt);
+
+    /* DEMO: Changing levels */
+    for (int i = 0; i < sizeof(levels) / sizeof(woop::Level); ++i) {
+      if (glfwGetKey(window.get_wrapped(), GLFW_KEY_1 + i))
+        player.set_level(levels[i]);
+    }
 
     /* Draw level */
     woop::Frame frame = renderer.begin_frame();
