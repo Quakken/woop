@@ -56,6 +56,7 @@ void Level::populate_level_data(const Wad& wad) {
   populate_segs(wad);
   populate_subsectors(wad);
   populate_nodes(wad);
+  populate_things(wad);
   finish_connections();
 }
 void Level::populate_sectors(const Wad& wad) {
@@ -213,6 +214,20 @@ void Level::populate_nodes(const Wad& wad) {
   // (https://doomwiki.org/wiki/Node)
   bsp_root = &nodes[nodes.size() - 1];
 }
+void Level::populate_things(const Wad& wad) {
+  const Lump& lump = wad.get_lump(name, "THINGS");
+  std::vector<RawThing> raw_things = lump.get_data_as<RawThing>();
+  things.reserve(raw_things.size());
+
+  for (const auto& raw_thing : raw_things) {
+    glm::vec2 position = {raw_thing.x_pos, raw_thing.y_pos};
+    float angle = doom_angle_to_deg(raw_thing.angle);
+    int16_t type = raw_thing.type;
+    int16_t flags = raw_thing.flags;
+    Thing thing{position, angle, type, flags};
+    things.emplace_back(thing);
+  };
+}
 
 void Level::finish_connections() {
   // Connect lines to sectors
@@ -222,7 +237,7 @@ void Level::finish_connections() {
       sector.lines.emplace_back(&line);
     }
     if (line.back) {
-      Sector& sector = line.front->sector_facing;
+      Sector& sector = line.back->sector_facing;
       sector.lines.emplace_back(&line);
     }
   }

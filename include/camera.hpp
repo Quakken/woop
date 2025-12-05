@@ -24,7 +24,7 @@ struct CameraConfig {
 
 class Camera {
  public:
-  Camera(const Window& window, const CameraConfig& cfg = CameraConfig{});
+  Camera(Window& window, const CameraConfig& cfg = CameraConfig{});
 
   glm::vec3 get_position() const noexcept { return config.position; }
   glm::vec2 get_position_2d() const noexcept {
@@ -50,9 +50,10 @@ class Camera {
    * @brief Returns a reference to the camera's associated window.
    */
   const Window& get_window() const noexcept { return window; }
+  Window& get_window() noexcept { return window; }
 
  private:
   CameraConfig config;
-  const Window& window;
+  Window& window;
 };
 }  // namespace woop

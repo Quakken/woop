@@ -93,7 +93,6 @@ struct Linedef {
   glm::vec2& end;
   Sidedef* front;
   Sidedef* back;
-  /* TODO: Flags and specials */
 };
 
 /**
@@ -114,6 +113,16 @@ struct Seg {
  */
 struct Subsector {
   std::vector<Seg*> segs;
+};
+
+/**
+ * @brief Stores information about a thing (enemy, weapon, level data, etc.)
+ */
+struct Thing {
+  glm::vec2 position;
+  float angle;
+  int16_t type;
+  int16_t flags;
 };
 
 /**
@@ -142,6 +151,9 @@ class Level {
 
   const Node& get_root_node() const;
   Node& get_root_node();
+
+  const std::vector<Thing>& get_things() const noexcept { return things; }
+  std::vector<Thing>& get_things() noexcept { return things; }
 
  private:
   /**
@@ -236,6 +248,7 @@ class Level {
   void populate_sidedefs(const Wad& wad);
   void populate_vertices(const Wad& wad);
   void populate_nodes(const Wad& wad);
+  void populate_things(const Wad& wad);
   /**
    * @brief Fills all data that could not be assigned during population (due to
    * dependency circles)
@@ -249,6 +262,7 @@ class Level {
   std::vector<Sidedef> sidedefs;
   std::vector<glm::vec2> vertices;
   std::vector<Node> nodes;
+  std::vector<Thing> things;
   /* TODO: Reject and blockmap */
   bool loaded;
   std::string name;
