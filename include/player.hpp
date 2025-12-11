@@ -67,9 +67,6 @@ class Player {
                            int scancode,
                            int action,
                            int mods);
-  static void cursor_position_callback(GLFWwindow* window,
-                                       double xpos,
-                                       double ypos);
   static void window_focus_callback(GLFWwindow* window, int focused);
 
   void update_position(float dt);
@@ -84,7 +81,6 @@ class Player {
   float get_floor_height();
 
   inline static glm::vec3 input;
-  inline static float mouse_delta;
 
   PlayerConfig config;
   const Subsector* current_subsector;

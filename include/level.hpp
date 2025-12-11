@@ -56,28 +56,19 @@ struct Sector {
   struct {
     int16_t height;
     std::string texture;
-    /* TODO: Texture& texture; */
   } floor;
   struct {
     int16_t height;
     std::string texture;
-    /* TODO: Texture& texture; */
   } ceiling;
   int16_t light_level;
   std::vector<Linedef*> lines;
-  /* TODO: Specials and tags */
 };
 
 /**
  * @brief Stores information about one side of a linedef (wall)
  */
 struct Sidedef {
-  /*
-  TODO: When textures are added...
-  Texture& upper;
-  Texture& lower;
-  Texture& middle;
-  */
   std::string upper_name;
   std::string lower_name;
   std::string middle_name;
@@ -263,7 +254,6 @@ class Level {
   std::vector<glm::vec2> vertices;
   std::vector<Node> nodes;
   std::vector<Thing> things;
-  /* TODO: Reject and blockmap */
   bool loaded;
   std::string name;
   Node* bsp_root;

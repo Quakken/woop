@@ -6,15 +6,14 @@
  */
 
 #include "exception.hpp" /* woop::Exception */
-#include "glm/fwd.hpp"
-#include "level.hpp"
-#include "log.hpp"      /* woop::log, woop::log_error, woop::log_fatal */
-#include "utils.hpp"    /* UNUSED_PARAMETER */
-#include "window.hpp"   /* woop::Window */
-#include "camera.hpp"   /* woop::Camera */
-#include "renderer.hpp" /* woop::Renderer */
-#include "player.hpp"   /* woop::Player */
-#include "wad.hpp"      /* woop::Wad */
+#include "level.hpp"     /* woop::Level */
+#include "log.hpp"       /* woop::log, woop::log_error, woop::log_fatal */
+#include "utils.hpp"     /* UNUSED_PARAMETER */
+#include "window.hpp"    /* woop::Window */
+#include "camera.hpp"    /* woop::Camera */
+#include "renderer.hpp"  /* woop::Renderer */
+#include "player.hpp"    /* woop::Player */
+#include "wad.hpp"       /* woop::Wad */
 
 /**
  * @brief Creates woop's primary window, based on configuration.
@@ -31,7 +30,6 @@ woop::Window create_window() {
 woop::Camera create_camera(woop::Window& window) {
   woop::CameraConfig cfg = {
       // Configuration options go here
-      .position = {3000.0f, 0.0f, -4800.0f},
       .fov = 90.0f,
   };
   return woop::Camera{window, cfg};
@@ -42,6 +40,7 @@ woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
       // Configuration options go here
       .clear_color = woop::Pixel{27, 27, 37, 255},
       .fill_color = woop::Pixel{215, 212, 206, 255},
+      .fog_strength = 0.75f,
   };
   return woop::Renderer(window, camera, cfg);
 }
@@ -49,6 +48,7 @@ woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
 woop::Player create_player(woop::Camera& camera, const woop::Level& level) {
   woop::PlayerConfig cfg = {
       // Configuration options go here
+      .camera_height = 45.0f,
       .move_speed = 300.0f,
       .enable_flight = false,
   };

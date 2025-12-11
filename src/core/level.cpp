@@ -148,7 +148,6 @@ void Level::populate_sidedefs(const Wad& wad) {
   std::vector<RawSidedef> raw_data = lump.get_data_as<RawSidedef>();
   sidedefs.reserve(raw_data.size());
   for (const auto& raw_sidedef : raw_data) {
-    // FIXME: Texture names need to have trailing null chars trimmed
     std::string upper_name = raw_sidedef.upper_name;
     std::string lower_name = raw_sidedef.lower_name;
     std::string middle_name = raw_sidedef.middle_name;

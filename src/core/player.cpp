@@ -18,12 +18,14 @@ constexpr int16_t player_start_thing = 1;
 Player::Player(Camera& cam, const Level& lvl, const PlayerConfig& conf)
     : config(conf), camera(cam), horiz_vel(0.0f), vert_vel(0.0f) {
   GLFWwindow* window = camera.get_window().get_wrapped();
+  // Set window callbacks
   glfwSetKeyCallback(window, key_callback);
-  glfwSetCursorPosCallback(window, cursor_position_callback);
-  set_level(lvl);
   glfwSetWindowFocusCallback(window, window_focus_callback);
   // Disable cursor
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+  // Load level
+  set_level(lvl);
 }
 
 void Player::update(float dt) {
@@ -146,16 +148,25 @@ void Player::do_gravity(float dt) {
 
 void Player::update_rotation() {
   float rotation = camera.get_rotation();
+
   if (config.enable_mouse) {
+    // Calculate mouse movement
+    static double mouse_prev_x = 0.0f;
+    double mouse_current_x;
+    GLFWwindow* window = camera.get_window().get_wrapped();
+    glfwGetCursorPos(window, &mouse_current_x, nullptr);
+    float mouse_delta = static_cast<float>(mouse_current_x - mouse_prev_x);
+
     rotation += mouse_delta * config.sensitivity;
-    // FIXME: cursor_position_callback doesn't update mouse_delta when the
-    // cursor doesn't move (mouse_delta is never 0).
-    mouse_delta = 0.0f;
-  } else {
+
+    mouse_prev_x = mouse_current_x;
+  } else
     rotation += input.x * config.sensitivity;
-  }
-  while (rotation > 360)
+
+  // Loop rotation when it goes beyond 360 deg
+  while (rotation > 360.0f)
     rotation -= 360.0f;
+
   camera.set_rotation(rotation);
 }
 
@@ -203,17 +214,6 @@ void Player::key_callback(GLFWwindow* window,
     else if (action == GLFW_RELEASE)
       ++input.y;
   }
-}
-
-void Player::cursor_position_callback(GLFWwindow* window,
-                                      double x_pos,
-                                      double y_pos) {
-  UNUSED_PARAMETER(window);
-  UNUSED_PARAMETER(y_pos);
-  static float cursor_prev = static_cast<float>(x_pos);
-  float cursor_current = static_cast<float>(x_pos);
-  mouse_delta = cursor_current - cursor_prev;
-  cursor_prev = cursor_current;
 }
 
 void Player::window_focus_callback(GLFWwindow* window, int focused) {
