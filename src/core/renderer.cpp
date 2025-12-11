@@ -9,21 +9,20 @@
 #include "glm/trigonometric.hpp" /* glm::radians */
 #include <algorithm>             /* std::swap, std::clamp, std::max, std::min */
 #include <string>                /* std::string */
-
-#include <unordered_map> /* TODO: Remove me! */
+#include <unordered_map>         /* std::unordered_map */
 
 namespace woop {
-// TODO: Remove me!
-Pixel get_random_color() {
-  return Pixel{rand(), rand(), rand(), 255};
+Pixel interpolate_color(float v, const Pixel& c1, const Pixel& c2) {
+  glm::vec4 c1_f = c1;
+  glm::vec4 c2_f = c2;
+  return c1_f + v * (c2_f - c1_f);
 }
 
-// TODO: Remove me!
-Pixel get_texture_color(const std::string& name) {
-  static std::unordered_map<std::string, Pixel> colormap;
-  if (colormap.find(name) == colormap.end())
-    colormap.insert({name, get_random_color()});
-  return colormap[name];
+/**
+ * @brief Returns a random color.
+ */
+Pixel get_random_color() {
+  return Pixel{rand(), rand(), rand(), 255};
 }
 
 Shader get_shader_from_cfg(const RendererConfig cfg) {
@@ -273,14 +272,16 @@ void Frame::draw_subsegs(DrawMode mode,
       v = std::clamp(v, 0.0f, 1.0f);
       float scale = start_scale + v * (end_scale - start_scale);
 
+      float fog = renderer.get_fog_strength() - scale;
+
       // Drawing solid segs
       if (is_seg_solid(seg)) {
         UnsignedRange range = get_row_range(floor, ceil, scale);
         // Clip occluded rows
         range = clip_row_range(col, range);
 
-        // TODO: Remove me!
-        renderer.set_fill_color(get_texture_color(seg.sidedef->middle_name));
+        renderer.set_fill_color(
+            get_texture_color(seg.sidedef->middle_name, fog));
         switch (mode) {
           case DrawMode::Solid:
             draw_column_solid(col, range);
@@ -315,13 +316,12 @@ void Frame::draw_subsegs(DrawMode mode,
 
           switch (mode) {
             case DrawMode::Solid:
-              // TODO: Remove me!
               renderer.set_fill_color(
-                  get_texture_color(seg.sidedef->lower_name));
+                  get_texture_color(seg.sidedef->lower_name, fog));
               draw_column_solid(col, bottom_range);
-              // TODO: Remove me!
+
               renderer.set_fill_color(
-                  get_texture_color(seg.sidedef->upper_name));
+                  get_texture_color(seg.sidedef->upper_name, fog));
               draw_column_solid(col, top_range);
               break;
             default:
@@ -430,6 +430,16 @@ void Frame::draw_node_child(DrawMode mode,
     draw(mode, node.get_node(child));
   else
     draw(mode, node.get_subsector(child));
+}
+
+Pixel Frame::get_texture_color(const std::string& name, float fog) {
+  static std::unordered_map<std::string, Pixel> colormap;
+  if (colormap.find(name) == colormap.end())
+    colormap.insert({name, get_random_color()});
+
+  // Fade color based on fog value
+  fog = std::clamp(fog, 0.0f, 1.0f);
+  return interpolate_color(fog, colormap[name], renderer.get_fog_color());
 }
 
 Renderer::Renderer(Window& wdw, Camera& cam, const RendererConfig& cfg)

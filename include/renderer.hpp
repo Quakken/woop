@@ -182,6 +182,10 @@ class Frame {
    * visible.
    */
   UnsignedRange clip_row_range(unsigned column, const UnsignedRange& range);
+  /**
+   * @brief Returns the color associated with a texture name.
+   */
+  Pixel get_texture_color(const std::string& name, float fog);
 
   Renderer& renderer;
   std::vector<UnsignedRange> visible_rows;
@@ -221,6 +225,8 @@ struct RendererConfig {
   } shaders;
   Pixel clear_color = Pixel{0, 0, 0, 255};
   Pixel fill_color = Pixel{255, 255, 255, 255};
+  Pixel fog_color = clear_color;
+  float fog_strength = 1.0f;
   unsigned texture_unit = 0;
 };
 
@@ -278,6 +284,24 @@ class Renderer {
    * @brief Returns the renderer's clear color.
    */
   Pixel get_clear_color() const noexcept { return config.clear_color; }
+  /**
+   * @brief Sets the renderer's fog color.
+   */
+  void set_fog_color(const Pixel& color) noexcept { config.fog_color = color; }
+  /**
+   * @brief Returns the renderer's fog color.
+   */
+  Pixel get_fog_color() const noexcept { return config.fog_color; }
+  /**
+   * @brief Sets the renderer's fog strength.
+   */
+  void set_fog_strength(float strength) noexcept {
+    config.fog_strength = strength;
+  }
+  /**
+   * @brief Returns the renderer's fog color.
+   */
+  float get_fog_strength() const noexcept { return config.fog_strength; }
 
  private:
   friend Frame;
