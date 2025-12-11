@@ -226,7 +226,7 @@ struct RendererConfig {
   Pixel clear_color = Pixel{0, 0, 0, 255};
   Pixel fill_color = Pixel{255, 255, 255, 255};
   Pixel fog_color = clear_color;
-  float fog_strength = 1.0f;
+  float fog_strength = 0.75f;
   unsigned texture_unit = 0;
 };
 

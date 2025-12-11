@@ -1,0 +1,33 @@
+# These values are required!
+[general]
+wad = "assets/wads/doom1.wad"
+level = "E1M1"
+
+[player]
+# height = 45.0
+# gravity = 9800.0
+# sensitivity = 1.0
+# move_speed = 300.0
+# acceleration = 900.0
+# drag = 0.1
+# enable_mouse = true
+# enable_flight = false
+
+[window]
+# title = "Woop"
+# resolution = [320, 200]
+# fullscreen = false
+# resizable = true
+# decorated = true
+
+[camera]
+# near_plane = 0.1
+# far_plane = 10000
+# fov = 90.0
+
+[renderer]
+# vertex_shader = "assets/shaders/vert.glsl"
+# fragment_shader = "assets/shaders/frag.glsl"
+# clear_color = [0, 0, 0]
+# fog_color = [0, 0, 0]
+# fog_strength = 0.75

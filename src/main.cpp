@@ -5,84 +5,59 @@
  * config data, and starting the simulation.
  */
 
-#include "exception.hpp" /* woop::Exception */
-#include "level.hpp"     /* woop::Level */
-#include "log.hpp"       /* woop::log, woop::log_error, woop::log_fatal */
-#include "utils.hpp"     /* UNUSED_PARAMETER */
-#include "window.hpp"    /* woop::Window */
-#include "camera.hpp"    /* woop::Camera */
-#include "renderer.hpp"  /* woop::Renderer */
-#include "player.hpp"    /* woop::Player */
-#include "wad.hpp"       /* woop::Wad */
+#include "exception.hpp"   /* woop::Exception */
+#include "level.hpp"       /* woop::Level */
+#include "log.hpp"         /* woop::log, woop::log_error, woop::log_fatal */
+#include "utils.hpp"       /* UNUSED_PARAMETER */
+#include "window.hpp"      /* woop::Window */
+#include "camera.hpp"      /* woop::Camera */
+#include "renderer.hpp"    /* woop::Renderer */
+#include "player.hpp"      /* woop::Player */
+#include "wad.hpp"         /* woop::Wad */
+#include "config.hpp"      /* Configuration parsing */
+#include "toml++/toml.hpp" /* toml::table  */
 
-/**
- * @brief Creates woop's primary window, based on configuration.
- */
-woop::Window create_window() {
-  woop::WindowConfig cfg = {
-      // Configuration options go here
-      .resolution = {320, 200},
-      .decorated = true,
-  };
+woop::Window create_window(const toml::table& table) {
+  woop::WindowConfig cfg = config::get_window_config(table);
   return woop::Window{cfg};
 }
 
-woop::Camera create_camera(woop::Window& window) {
-  woop::CameraConfig cfg = {
-      // Configuration options go here
-      .fov = 90.0f,
-  };
+woop::Camera create_camera(woop::Window& window, const toml::table& table) {
+  woop::CameraConfig cfg = config::get_camera_config(table);
   return woop::Camera{window, cfg};
 }
 
-woop::Renderer create_renderer(woop::Window& window, woop::Camera& camera) {
-  woop::RendererConfig cfg = {
-      // Configuration options go here
-      .clear_color = woop::Pixel{27, 27, 37, 255},
-      .fill_color = woop::Pixel{215, 212, 206, 255},
-      .fog_strength = 0.75f,
-  };
+woop::Renderer create_renderer(woop::Window& window,
+                               woop::Camera& camera,
+                               const toml::table& table) {
+  woop::RendererConfig cfg = config::get_renderer_config(table);
   return woop::Renderer(window, camera, cfg);
 }
 
-woop::Player create_player(woop::Camera& camera, const woop::Level& level) {
-  woop::PlayerConfig cfg = {
-      // Configuration options go here
-      .camera_height = 45.0f,
-      .move_speed = 300.0f,
-      .enable_flight = false,
-  };
+woop::Player create_player(woop::Camera& camera,
+                           const woop::Level& level,
+                           const toml::table& table) {
+  woop::PlayerConfig cfg = config::get_player_config(table);
   return woop::Player{camera, level, cfg};
 }
-
-struct Thing {
-  int16_t x;
-  int16_t y;
-  int16_t angle;
-  int16_t type;
-  int16_t flags;
-};
 
 /**
  * @brief Woop's main loop. Blocks until application is closed.
  */
 void run_loop() {
+  toml::table table = toml::parse_file("config.toml");
+
   /* Renderer data */
-  woop::Window window = create_window();
-  woop::Camera camera = create_camera(window);
-  woop::Renderer renderer = create_renderer(window, camera);
+  woop::Window window = create_window(table);
+  woop::Camera camera = create_camera(window, table);
+  woop::Renderer renderer = create_renderer(window, camera, table);
 
   /* Level data */
-  woop::Wad doom1 = {"assets/wads/doom1.wad"};
-  woop::Level levels[] = {
-      woop::Level{doom1, "E1M1"},
-      woop::Level{doom1, "E1M2"},
-      woop::Level{doom1, "E1M3"},
-      woop::Level{doom1, "E1M4"},
-  };
+  woop::Wad wad = config::get_wad(table);
+  woop::Level level = config::get_level(wad, table);
 
   /* Player */
-  woop::Player player = create_player(camera, levels[0]);
+  woop::Player player = create_player(camera, level, table);
 
   float time = glfwGetTime();
   while (!window.should_close()) {
@@ -93,12 +68,6 @@ void run_loop() {
 
     /* Move player */
     player.update(dt);
-
-    /* DEMO: Changing levels */
-    for (int i = 0; i < sizeof(levels) / sizeof(woop::Level); ++i) {
-      if (glfwGetKey(window.get_wrapped(), GLFW_KEY_1 + i))
-        player.set_level(levels[i]);
-    }
 
     /* Draw level */
     woop::Frame frame = renderer.begin_frame();
@@ -112,8 +81,13 @@ int main(int argc, const char* argv[]) {
 
   try {
     run_loop();
+  } catch (config::ConfigException& exception) {
+    woop::log_fatal("Configuration error: ", exception.what());
   } catch (woop::Exception& exception) {
     woop::log_fatal("Exception caught: ", exception.what());
+  } catch (toml::parse_error& exception) {
+    woop::log_fatal("Error parsing configuration (", exception.source(),
+                    "): ", exception.description());
   } catch (std::exception& exception) {
     woop::log_fatal("Standard exception caught: ", exception.what());
   }
