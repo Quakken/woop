@@ -1,33 +1,71 @@
+#  _    _  ___   ___ ______ 
+# | |  | |/ _ \ / _ \| ___ \
+# | |  | | (_) | (_) | |_/ /
+# | |/\| |\___/ \___/|  __/ 
+# \  /\  /           | |    
+#  \/  \/            \_|  
+#
+# This is the main configuration file for the woop
+# renderer! All options (and their defaults) are
+# listed below.
+
 # These values are required!
 [general]
-wad = "assets/wads/doom1.wad"
-level = "E1M1"
+wad = "path/to/your/wad"
+level = "LEVELNAME"
 
 [player]
-# height = 45.0
-# gravity = 9800.0
-# sensitivity = 1.0
-# move_speed = 300.0
-# acceleration = 900.0
-# drag = 0.1
-# enable_mouse = true
-# enable_flight = false
+# How tall the player is
+height = 45.0
+# How much acceleration to apply when the player is
+# falling
+gravity = 9800.0
+# How fast the camera should rotate
+sensitivity = 1.0
+# Maximum movement speed
+move_speed = 300.0
+# How fast the player accelerates
+acceleration = 900.0
+# How much drag to apply when no input is pressed
+drag = 0.1
+# Whether mouse aiming is enabled
+enable_mouse = true
+# Whether flight is enabled
+enable_flight = false
 
 [window]
-# title = "Woop"
-# resolution = [320, 200]
-# fullscreen = false
-# resizable = true
-# decorated = true
+# Title of the window
+title = "Woop"
+# Default window resolution. This also affects the
+# resolution of the output image, so be wary of
+# performance costs.
+resolution = [320, 200]
+# Whether the window should be fullscreen
+fullscreen = false
+# Whether the window should be resizable
+resizable = true
+# Whether the window should be decorated
+decorated = true
 
 [camera]
-# near_plane = 0.1
-# far_plane = 10000
-# fov = 90.0
+# Near clipping plane
+near_plane = 0.1
+# Far clipping plane
+far_plane = 10000.0
+# Field of view
+fov = 90.0
 
 [renderer]
-# vertex_shader = "assets/shaders/vert.glsl"
-# fragment_shader = "assets/shaders/frag.glsl"
-# clear_color = [0, 0, 0]
-# fog_color = [0, 0, 0]
-# fog_strength = 0.75
+# Path to the vertex shader used to render the 
+# output image
+vertex_shader = "assets/shaders/vert.glsl"
+# Path to the fragment shader used to render the 
+# output iamge
+fragment_shader = "assets/shaders/frag.glsl"
+# Color used to clear the screen
+clear_color = [0, 0, 0]
+# Color of fog in the level
+fog_color = [0, 0, 0]
+# Strength of fog in the level. Set to 0 to 
+# disable.
+fog_strength = 0.75
