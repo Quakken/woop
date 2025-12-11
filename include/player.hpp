@@ -17,10 +17,10 @@ namespace woop {
  * @broef Configuration data for the player controller.
  */
 struct PlayerConfig {
-  float camera_height = 30.0f;
+  float camera_height = 45.0f;
   float gravity = 9.8f * 100.0f;
   float sensitivity = 1.0f;
-  float move_speed = 650.0f;
+  float move_speed = 300.0f;
   float acceleration = 3 * move_speed;
   float drag = 0.1f;
   bool enable_mouse = true;

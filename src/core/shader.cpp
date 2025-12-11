@@ -12,8 +12,9 @@ Shader::Shader(const std::string& vert_src, const std::string& frag_src) {
   program = compile(vert_src, frag_src);
 }
 Shader::Shader(Shader&& other) {
-  other.invalid = true;
   program = other.program;
+  invalid = false;
+  other.invalid = true;
 }
 Shader::~Shader() {
   if (is_valid())
@@ -21,10 +22,11 @@ Shader::~Shader() {
 }
 
 Shader& Shader::operator=(Shader&& other) {
-  other.invalid = true;
   if (is_valid())
     glDeleteShader(program);
   program = other.program;
+  invalid = other.invalid;
+  other.invalid = true;
   return *this;
 }
 

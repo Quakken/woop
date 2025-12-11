@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <string_view>
+#include <string>
 #include <exception>
 
 namespace woop {
@@ -20,6 +20,6 @@ class Exception : public std::exception {
   const char* what() const noexcept override { return msg.data(); }
 
  private:
-  std::string_view msg;
+  std::string msg;
 };
 }  // namespace woop

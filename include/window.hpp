@@ -41,7 +41,7 @@ struct WindowException : public Exception {
  */
 struct WindowConfig {
   std::string title = "Woop";
-  glm::ivec2 resolution = {1280, 720};
+  glm::ivec2 resolution = {320, 200};
   bool fullscreen = false;
   bool resizable = true;
   bool decorated = true;
