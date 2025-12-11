@@ -30,3 +30,4 @@ Woop relies on a few external libraries to compile. These should be managed auto
 - GLFW - Windowing, input
 - GLAD - OpenGL function loading
 - GLM - Vector math
+- toml++ - Config parsing

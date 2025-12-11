@@ -18,6 +18,7 @@ target_link_libraries(woop_core PUBLIC
   glad
   glfw
   glm::glm
+  tomlplusplus::tomlplusplus
 )
 
 # Compiler warning levels
