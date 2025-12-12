@@ -303,6 +303,11 @@ class Renderer {
    */
   float get_fog_strength() const noexcept { return config.fog_strength; }
 
+  const Shader& get_shader() const noexcept {
+    return display_rect.get_shader();
+  }
+  Shader& get_shader() noexcept { return display_rect.get_shader(); }
+
  private:
   friend Frame;
 

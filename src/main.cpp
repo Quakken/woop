@@ -41,6 +41,11 @@ woop::Player create_player(woop::Camera& camera,
   return woop::Player{camera, level, cfg};
 }
 
+void update_shader_properties(woop::Renderer& renderer) {
+  woop::Shader& shader = renderer.get_shader();
+  shader.set_uniform("u_time", static_cast<float>(glfwGetTime()));
+}
+
 /**
  * @brief Woop's main loop. Blocks until application is closed.
  */
@@ -68,6 +73,9 @@ void run_loop() {
 
     /* Move player */
     player.update(dt);
+
+    /* Update shader uniforms */
+    update_shader_properties(renderer);
 
     /* Draw level */
     woop::Frame frame = renderer.begin_frame();

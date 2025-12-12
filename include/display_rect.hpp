@@ -25,6 +25,9 @@ class DisplayRect {
 
   void bind_texture() const noexcept;
 
+  const Shader& get_shader() const noexcept { return shader; }
+  Shader& get_shader() noexcept { return shader; }
+
  private:
   void gen_texture();
   void gen_quad();
