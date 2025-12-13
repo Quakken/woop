@@ -36,10 +36,8 @@ enable_flight = false
 [window]
 # Title of the window
 title = "Woop"
-# Default window resolution. This also affects the
-# resolution of the output image, so be wary of
-# performance costs.
-resolution = [320, 200]
+# Size of the window
+size = [2560, 1440]
 # Whether the window should be fullscreen
 fullscreen = false
 # Whether the window should be resizable
@@ -62,6 +60,9 @@ vertex_shader = "assets/shaders/vert.glsl"
 # Path to the fragment shader used to render the 
 # output iamge
 fragment_shader = "assets/shaders/frag.glsl"
+# Resolution of the output image. Be wary of
+# performance when increasing this.
+resolution = [320, 200]
 # Color used to clear the screen
 clear_color = [0, 0, 0]
 # Color of fog in the level

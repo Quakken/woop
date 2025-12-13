@@ -446,8 +446,6 @@ Renderer::Renderer(Window& wdw, Camera& cam, const RendererConfig& cfg)
     : config(cfg),
       window(wdw),
       camera(cam),
-      size(static_cast<unsigned>(window.get_resolution().x),
-           static_cast<unsigned>(window.get_resolution().y)),
       display_rect(*this, get_shader_from_cfg(cfg)) {
   // Shaders are only guaranteed to support 16 texture units.
   if (cfg.texture_unit > 16)
@@ -455,7 +453,7 @@ Renderer::Renderer(Window& wdw, Camera& cam, const RendererConfig& cfg)
         RenderException::Type::InvalidConfig,
         "Attempting to bind renderer to an invalid texture index.");
   screen_plane_distance =
-      static_cast<float>(size.x) / 2.0f /
+      static_cast<float>(config.resolution.x) / 2.0f /
       static_cast<float>(std::tan(glm::radians(camera.get_fov() / 2.0f)));
   gen_pbos();
 }
@@ -466,10 +464,10 @@ Frame Renderer::begin_frame() {
   return frame;
 }
 glm::uvec2 Renderer::get_img_size() const noexcept {
-  return size;
+  return config.resolution;
 }
 std::size_t Renderer::get_pixel_count() const noexcept {
-  return size.x * size.y;
+  return config.resolution.x * config.resolution.y;
 }
 unsigned Renderer::get_texture_unit() const noexcept {
   return config.texture_unit;

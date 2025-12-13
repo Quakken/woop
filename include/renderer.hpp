@@ -223,6 +223,7 @@ struct RendererConfig {
     std::string vert_src = "";
     std::string frag_src = "";
   } shaders;
+  glm::uvec2 resolution = {320, 200};
   Pixel clear_color = Pixel{0, 0, 0, 255};
   Pixel fill_color = Pixel{255, 255, 255, 255};
   Pixel fog_color = clear_color;
@@ -331,7 +332,6 @@ class Renderer {
   RendererConfig config;
   Window& window;
   Camera& camera;
-  glm::uvec2 size;
   DisplayRect display_rect;
   unsigned pbo_back;
   unsigned pbo_front;
