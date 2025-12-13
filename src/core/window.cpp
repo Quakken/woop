@@ -18,6 +18,9 @@ Window::Window(const WindowConfig& cfg) : config(cfg) {
     init_glad();
   set_callbacks();
   ++num_windows;
+
+  // Set viewport size
+  glViewport(0, 0, config.size.x, config.size.y);
 }
 Window::~Window() {
   glfwDestroyWindow(window);
@@ -31,17 +34,17 @@ std::string Window::get_title() const noexcept {
 void Window::set_title(const std::string& new_title) noexcept {
   glfwSetWindowTitle(window, new_title.c_str());
 }
-glm::ivec2 Window::get_resolution() const noexcept {
+glm::ivec2 Window::get_size() const noexcept {
   glm::ivec2 out;
   glfwGetWindowSize(window, &out.x, &out.y);
   return out;
 }
-void Window::set_resolution(const glm::ivec2& new_resolution) noexcept {
-  glfwSetWindowSize(window, new_resolution.x, new_resolution.y);
+void Window::set_size(const glm::ivec2& new_size) noexcept {
+  glfwSetWindowSize(window, new_size.x, new_size.y);
 }
 float Window::get_aspect_ratio() const {
-  float x = static_cast<float>(get_resolution().x);
-  float y = static_cast<float>(get_resolution().y);
+  float x = static_cast<float>(get_size().x);
+  float y = static_cast<float>(get_size().y);
   if (y == 0)
     throw WindowException(WindowException::Type::Other,
                           "Window has no vertical size (is it minimized?)");
@@ -71,8 +74,8 @@ void Window::init_window() {
   GLFWmonitor* monitor = nullptr;
   if (config.fullscreen)
     monitor = glfwGetPrimaryMonitor();
-  window = glfwCreateWindow(config.resolution.x, config.resolution.y,
-                            config.title.c_str(), monitor, NULL);
+  window = glfwCreateWindow(config.size.x, config.size.y, config.title.c_str(),
+                            monitor, NULL);
   if (!window) {
     if (num_windows == 0)
       shutdown_glfw();

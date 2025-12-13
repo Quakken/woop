@@ -56,12 +56,12 @@ woop::WindowConfig get_window_config(const toml::table& table) {
   if (const auto& entry = table["window"]["title"].value<std::string>())
     cfg.title = entry.value();
   // Resolution
-  if (const auto* entry = table["window"]["resolution"].as_array()) {
+  if (const auto* entry = table["window"]["size"].as_array()) {
     try {
-      cfg.resolution = get_array_as_ivec2(*entry);
+      cfg.size = get_array_as_ivec2(*entry);
     } catch (std::exception& exception) {
       throw ConfigException(
-          "Invalid value given to \"window.resolution\" (expected [width, "
+          "Invalid value given to \"window.size\" (expected [width, "
           "height])");
     }
   }
@@ -99,6 +99,20 @@ woop::RendererConfig get_renderer_config(const toml::table& table) {
   if (const auto& entry =
           table["renderer"]["fragment_shader"].value<std::string>())
     cfg.shaders.frag_path = entry.value();
+  // Resolution
+  if (const auto* entry = table["renderer"]["resolution"].as_array()) {
+    glm::ivec2 resolution;
+    try {
+      resolution = get_array_as_ivec2(*entry);
+    } catch (std::exception& exception) {
+      throw ConfigException(
+          "Invalid value given to \"renderer.resolution\" (expected [width, "
+          "height])");
+    }
+    if (resolution.x < 0 || resolution.y < 0)
+      throw ConfigException("Renderer resolution must be positive.");
+    cfg.resolution = resolution;
+  }
   // Clear color
   if (const auto* entry = table["renderer"]["clear_color"].as_array()) {
     try {

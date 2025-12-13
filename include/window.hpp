@@ -41,7 +41,7 @@ struct WindowException : public Exception {
  */
 struct WindowConfig {
   std::string title = "Woop";
-  glm::ivec2 resolution = {320, 200};
+  glm::ivec2 size = {1280, 720};
   bool fullscreen = false;
   bool resizable = true;
   bool decorated = true;
@@ -68,8 +68,8 @@ class Window {
   std::string get_title() const noexcept;
   void set_title(const std::string& new_title) noexcept;
 
-  glm::ivec2 get_resolution() const noexcept;
-  void set_resolution(const glm::ivec2& new_resolution) noexcept;
+  glm::ivec2 get_size() const noexcept;
+  void set_size(const glm::ivec2& new_size) noexcept;
 
   float get_aspect_ratio() const;
 
