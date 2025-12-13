@@ -18,6 +18,9 @@ Window::Window(const WindowConfig& cfg) : config(cfg) {
     init_glad();
   set_callbacks();
   ++num_windows;
+
+  // Set viewport size
+  glViewport(0, 0, config.size.x, config.size.y);
 }
 Window::~Window() {
   glfwDestroyWindow(window);
