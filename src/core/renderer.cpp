@@ -102,16 +102,34 @@ bool Frame::clip_seg(glm::vec2& start, glm::vec2& end) noexcept {
   if (!clip_start && !clip_end)
     return true;
 
+  // Returns the intersection between a line segment and the player's FOV.
+  auto get_fov_intersection =
+      [&](const glm::vec2& p1,
+          const glm::vec2& p2) -> std::optional<glm::vec2> {
+    // Nearest side of the player's FOV
+    float dir = (p1.y > 0) ? 1 : -1;
+    float cam_far_plane = camera.get_far_plane();
+    glm::vec2 fov_start = {0.0f, 0.0f};
+    glm::vec2 fov_end = {cam_far_plane, fov_slope * dir * cam_far_plane};
+    std::optional<glm::vec2> intersect;
+    // Test intersection against nearest side
+    if ((intersect = get_segment_intersection(p1, p2, fov_start, fov_end)))
+      return intersect;
+    // Test intersection against opposite side
+    fov_end = {fov_end.x, -fov_end.y};
+    if ((intersect = get_segment_intersection(p1, p2, fov_start, fov_end)))
+      return intersect;
+    // No intersection
+    return std::nullopt;
+  };
+
   // Clips p1 to the view plane, if necessary. Returns true if clipping was a
   // success, and false if not.
   auto clip_endpoint = [&](glm::vec2& p1, const glm::vec2& p2) {
-    float dir = (p1.y > 0) ? 1 : -1;
-    std::optional<glm::vec2> intersect = get_segment_intersection(
-        p1, p2, glm::vec2{0.0f},
-        glm::vec2{camera.get_far_plane(),
-                  fov_slope * dir * camera.get_far_plane()});
+    std::optional<glm::vec2> intersect = get_fov_intersection(p1, p2);
     if (intersect)
-      p1 = intersect.value();
+      p1 = *intersect;
+    // No intersection - line lies outside of FOV
     else
       return false;
     return true;
@@ -136,11 +154,11 @@ std::optional<glm::vec2> Frame::get_segment_intersection(
   if (denom == 0)
     return std::nullopt;
 
-  float s =
-      (-delta_1.y * (start_1.x - end_1.x) + delta_1.x * (start_1.y - end_1.y)) /
-      denom;
+  float s = (-delta_1.y * (start_1.x - start_2.x) +
+             delta_1.x * (start_1.y - start_2.y)) /
+            denom;
   float t = (delta_2.x * (start_1.y - start_2.y) -
-             delta_2.y * (start_1.x - start_2.y)) /
+             delta_2.y * (start_1.x - start_2.x)) /
             denom;
 
   if (0 <= s && s <= 1 && 0 <= t && t <= 1)

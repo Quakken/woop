@@ -11,8 +11,8 @@
 
 # These values are required!
 [general]
-wad = "assets/wads/doom1.wad"
-level = "E1M1"
+wad = "path/to/your/wad"
+level = "LEVELNAME"
 
 [player]
 # How tall the player is
@@ -39,7 +39,7 @@ title = "Woop"
 # Size of the window
 size = [1280, 720]
 # Whether the window should be fullscreen
-fullscreen = true
+fullscreen = false
 # Whether the window should be resizable
 resizable = true
 # Whether the window should be decorated
